@@ -1,0 +1,21 @@
+<Project Sdk="Microsoft.NET.Sdk.Worker">
+
+  <PropertyGroup>
+    <TargetFramework>net10.0</TargetFramework>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <UserSecretsId>dotnet-Forgotten.Bot-30d0252a-d544-4e9a-a6dc-571b7240bbff</UserSecretsId>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Discord.Net" Version="3.20.2" />
+    <PackageReference Include="Microsoft.Extensions.Configuration.UserSecrets" Version="10.0.13" />
+    <PackageReference Include="Microsoft.Extensions.Hosting" Version="10.0.2" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\Forgotten.Nft.Application\Forgotten.Nft.Application.csproj" />
+    <ProjectReference Include="..\Forgotten.Nft.Infrastructure\Forgotten.Nft.Infrastructure.csproj" />
+    <ProjectReference Include="..\Forgotten.Nft.Integrations\Forgotten.Nft.Integrations.csproj" />
+  </ItemGroup>
+</Project>

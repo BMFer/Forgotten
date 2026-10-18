@@ -1,0 +1,31 @@
+# Build output
+bin/
+obj/
+[Dd]ebug/
+[Rr]elease/
+artifacts/
+
+# .NET / Rider / VS
+*.user
+.vs/
+.idea/
+*.suo
+
+# Secrets — NEVER commit (spec §5.2, §16.11)
+appsettings.*.local.json
+secrets.json
+*.secret.json
+.env
+.env.*
+
+# SQLite databases and WAL/SHM sidecars (runtime + EF design-time)
+*.db
+*.db-wal
+*.db-shm
+forgotten-design.db
+
+# Test / coverage output
+TestResults/
+coverage/
+*.coverage
+*.trx

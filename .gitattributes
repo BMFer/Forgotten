@@ -1,0 +1,22 @@
+# Normalize line endings: store LF in the repo, check out native on each OS.
+* text=auto
+
+# Explicit text types (checked out with native EOL)
+*.cs       text diff=csharp
+*.csproj   text
+*.slnx     text
+*.sln      text eol=crlf
+*.json     text
+*.md       text
+*.yml      text
+*.yaml     text
+*.gitignore text
+*.gitattributes text
+
+# Binary files (never normalized)
+*.pdf      binary
+*.png      binary
+*.jpg      binary
+*.gif      binary
+*.webp     binary
+*.db       binary

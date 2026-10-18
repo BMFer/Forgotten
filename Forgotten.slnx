@@ -1,0 +1,15 @@
+<Solution>
+  <Folder Name="/src/">
+    <Project Path="src/Forgotten.Bot/Forgotten.Bot.csproj" />
+    <Project Path="src/Forgotten.Nft.Application/Forgotten.Nft.Application.csproj" />
+    <Project Path="src/Forgotten.Nft.Domain/Forgotten.Nft.Domain.csproj" />
+    <Project Path="src/Forgotten.Nft.Infrastructure/Forgotten.Nft.Infrastructure.csproj" />
+    <Project Path="src/Forgotten.Nft.Integrations/Forgotten.Nft.Integrations.csproj" />
+    <Project Path="src/Forgotten.Nft.WalletWeb/Forgotten.Nft.WalletWeb.csproj" />
+  </Folder>
+  <Folder Name="/tests/">
+    <Project Path="tests/Forgotten.Nft.IntegrationTests/Forgotten.Nft.IntegrationTests.csproj" />
+    <Project Path="tests/Forgotten.Nft.SecurityTests/Forgotten.Nft.SecurityTests.csproj" />
+    <Project Path="tests/Forgotten.Nft.UnitTests/Forgotten.Nft.UnitTests.csproj" />
+  </Folder>
+</Solution>
