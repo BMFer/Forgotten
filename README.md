@@ -151,4 +151,4 @@ See the spec's full security requirements and (as phases land) `docs/SECURITY.md
 
 ## License
 
-Not yet specified.
+[MIT](LICENSE) © 2026 Jerrame Hertz
