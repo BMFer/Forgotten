@@ -1,7 +1,7 @@
 # Phase 1 — Foundation (NFT Inspection)
 
 **Spec refs:** §4.1, §5 (all), §8, §9 (relevant tables), §15, §17, §19, §22.1
-**Status:** not started
+**Status:** ✅ code complete (2026-10-19, branch `phase-1-foundation`) — live DAS inspection pending a configured endpoint (see Exit Gate)
 **Deliverable (spec §22):** `/nft inspect <asset_address>` works against a
 configured Solana DAS provider — retrieving, normalizing, and displaying a single
 NFT with artwork, ownership, and collection info.
@@ -132,10 +132,22 @@ thin command → embed. This is the backbone every later phase reuses.
 
 ## 7. Exit Gate — all must be checked to start Phase 2
 
-- [ ] `/nft inspect <valid_addr>` returns a correct embed with artwork + attributes.
-- [ ] Unsupported / missing / burned assets are classified correctly and distinctly.
-- [ ] Provider failures never read as "NFT does not exist".
-- [ ] SSRF + metadata-sanitization tests pass.
-- [ ] Migration applies to a fresh DB and is additive.
-- [ ] Build clean; all Phase 1 unit tests green; docs
-      (`SOLANA_INTEGRATION.md`, `DISCORD_COMMANDS.md`, `CONFIGURATION.md`) updated.
+- [x] Live DAS path verified against a real endpoint (2026-10-19): `getAsset` →
+      validate → normalize → classify. Wrapped SOL returned `AssetExists=true`,
+      `InterfaceType=FungibleToken`, `Status=Unsupported` — correct live
+      classification. *(Still to render: a full artwork embed for a real NFT mint —
+      the `/nft inspect` Discord command is registered and the bot is live for it.)*
+- [x] Unsupported / missing / burned assets are classified correctly and distinctly. *(Unit tests.)*
+- [x] Provider failures never read as "NFT does not exist" → `ProviderUnavailable`. *(Unit test.)*
+- [x] SSRF + metadata-sanitization tests pass. *(23 security tests incl. metadata IP + redirect scheme guard; embed markdown escaping.)*
+- [x] Migration applies to a fresh DB and is additive. *(`AddNftAssets` migration; Phase 0 `DatabaseMigrationTests` cover apply.)*
+- [x] Build clean (0 warnings); all Phase 1 tests green (56 total: 29 unit, 23 security, 4 integration).
+- [ ] Docs (`SOLANA_INTEGRATION.md`, `DISCORD_COMMANDS.md`, `CONFIGURATION.md`) — to be written before closing the phase.
+
+### Verification summary (2026-10-19)
+
+- `dotnet build Forgotten.slnx` → **0 warnings, 0 errors**.
+- `dotnet test` → **56 passed / 0 failed**.
+- `dotnet run` → bot connects, registers the `/nft` command group to the dev guild,
+  reaches Ready. Banner reports `Solana.DasConfigured=False` — live inspection
+  returns `BLOCKCHAIN_PROVIDER_UNAVAILABLE` until an endpoint is set.

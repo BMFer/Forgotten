@@ -1,4 +1,6 @@
+using Forgotten.Nft.Application.Abstractions;
 using Forgotten.Nft.Application.Configuration;
+using Forgotten.Nft.Application.Services;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Options;
@@ -29,7 +31,9 @@ public static class ApplicationServiceCollectionExtensions
         services.AddSingleton<IValidateOptions<NftEngineOptions>, NftEngineOptionsValidator>();
         services.AddSingleton<IValidateOptions<SolanaOptions>, SolanaOptionsValidator>();
 
-        // Phase 1+ register application services (inspection, verification, …) here.
+        services.AddMemoryCache();
+        services.AddScoped<INftInspectionService, NftInspectionService>();
+
         return services;
     }
 }
