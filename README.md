@@ -5,9 +5,10 @@ on Discord.Net. FORGOTTEN lets Discord members inspect Solana NFTs, cryptographi
 prove wallet ownership, browse their collections, and expose verified ownership to
 external games — without hardcoding any single NFT collection.
 
-> **Status:** Phase 0 (bootstrap) complete. The solution builds, the host wires up
-> cleanly, and the Discord/SQLite/config foundation is in place. NFT features land
-> in Phases 1–6 — see the [Roadmap](#roadmap).
+> **Status:** Phases 0–2 complete and running. `/nft inspect`, `/nft verify`,
+> `/nft collection`, and the `/nft-admin` registry tools work against a live
+> Metaplex DAS provider. Phase 3 (cryptographic wallet verification) is next —
+> see the [Roadmap](#roadmap).
 
 The engine is **collection-agnostic**: it validates and displays NFTs from any
 compatible Solana collection, while game-specific logic (e.g. Dead Mint Carnival /
@@ -55,7 +56,7 @@ references Discord.Net or EF Core. See [docs/ARCHITECTURE.md](docs/ARCHITECTURE.
 
 - [.NET 10 SDK](https://dotnet.microsoft.com/download) (10.0.100+)
 - A Discord bot application + token ([Discord Developer Portal](https://discord.com/developers/applications))
-- *(Later phases)* a DAS-compatible Solana RPC endpoint (e.g. a Metaplex DAS provider)
+- A DAS-compatible Solana RPC endpoint (Metaplex DAS — e.g. Helius) for NFT inspection/verification. Must support the `getAsset` method; plain RPCs without DAS won't work.
 
 ### Build & test
 
@@ -75,6 +76,9 @@ provider API keys) via user secrets or environment variables:
 # user secrets (recommended for local dev)
 dotnet user-secrets set "Discord:Token" "<your-bot-token>" --project src/Forgotten.Bot
 
+# DAS provider endpoint (often embeds an API key — keep it out of appsettings)
+dotnet user-secrets set "Solana:DasEndpoint" "https://<das-provider>/?api-key=..." --project src/Forgotten.Bot
+
 # optional: fast, guild-scoped slash-command registration during development
 dotnet user-secrets set "Discord:DevGuildId" "<your-guild-id>" --project src/Forgotten.Bot
 ```
@@ -91,7 +95,36 @@ dotnet run --project src/Forgotten.Bot
 
 The host **fails closed**: if the Discord token (or any security-critical setting)
 is missing or invalid, startup is refused with a clear validation error rather than
-continuing in a degraded state.
+continuing in a degraded state. Pending database migrations are applied
+automatically on startup (additively — never dropping data).
+
+## Discord commands
+
+Member commands:
+
+| Command | Description |
+|---|---|
+| `/nft inspect <address>` | Inspect an NFT: artwork, owner, traits, status |
+| `/nft verify <address>` | Layered verification — validity · on-chain collection · registry approval |
+| `/nft collection <address>` | Show a collection and a page of its NFTs |
+| `/nft attributes <address>` | Show just the NFT's traits |
+| `/nft refresh <address>` | Re-fetch an NFT, bypassing the cache |
+| `/nft help` | Usage help |
+
+Administrator commands (guild administrators only; responses are ephemeral):
+
+| Command | Description |
+|---|---|
+| `/nft-admin collection-add <address> [name]` | Approve a collection for this server |
+| `/nft-admin collection-remove <address>` | Remove a collection's approval |
+| `/nft-admin collection-list` | List approved collections |
+| `/nft-admin provider-status` | Show Solana provider configuration status |
+| `/nft-admin cache-clear` | Clear cached inspection data |
+| `/nft-admin verification-log` | Recent verification activity |
+
+> Verification keeps three facts strictly separate: **on-chain collection
+> verification ≠ registry approval ≠ ownership**. Ownership lines read
+> "not evaluated" until Phase 3 lands cryptographic wallet proof.
 
 ## Configuration overview
 
@@ -99,7 +132,9 @@ continuing in a degraded state.
 |---|---|---|
 | `Discord` | Bot token, optional dev guild id | Token is a **secret** |
 | `Database` | SQLite connection string, busy timeout | WAL + foreign keys enforced |
-| `Solana` | Network, DAS/RPC endpoints, timeouts, paging, cache TTL | API keys via secrets only |
+| `Solana` | Network, DAS/RPC endpoints, timeouts, paging, cache TTL | DAS endpoint/API keys via secrets |
+| `Metadata` | IPFS/Arweave gateways, size/time/redirect limits | SSRF-guarded fetches |
+| `Presentation` | Explorer base URL, placeholder image, command cooldown | — |
 | `NftEngine` | Feature flags (monitoring, gallery, POW, limits) | Validated at startup |
 
 All options are strongly typed and validated on startup (DataAnnotations +
@@ -109,11 +144,15 @@ complete.
 ## Database
 
 SQLite via EF Core, evolved **only** through migrations — the database is never
-auto-dropped or recreated. The initial (empty) migration is `InitialCreate`;
-Phase 1 onwards add the tables from the spec.
+auto-dropped or recreated. Pending migrations are applied automatically when the
+bot starts (additive `Database.Migrate()`), so the schema stays in sync with the
+code with no manual step. Tables so far: `NftAssets`, `NftAttributes` (Phase 1),
+`NftCollections`, `NftVerificationLogs` (Phase 2).
+
+To add or inspect migrations during development:
 
 ```bash
-dotnet ef database update \
+dotnet ef migrations add <Name> \
   --project src/Forgotten.Nft.Infrastructure \
   --startup-project src/Forgotten.Nft.Infrastructure
 ```
@@ -126,9 +165,9 @@ Each phase is a self-contained, tested vertical slice. Full guides live in
 | Phase | Deliverable | Status |
 |------|-------------|--------|
 | **0 — Bootstrap** | Solution, host, DI, config, Discord + SQLite foundation | ✅ Complete |
-| **1 — Foundation** | `/nft inspect` against a DAS provider | ⬜ Planned |
-| **2 — Verification** | `/nft verify` + collection approval registry | ⬜ Planned |
-| **3 — Wallet** | Cryptographic Ed25519 wallet ownership proof | ⬜ Planned |
+| **1 — Foundation** | `/nft inspect` against a DAS provider | ✅ Complete |
+| **2 — Verification** | `/nft verify` + collection approval registry | ✅ Complete |
+| **3 — Wallet** | Cryptographic Ed25519 wallet ownership proof | ⬜ Next |
 | **4 — Gallery** | Interactive, paginated `/nft gallery` | ⬜ Planned |
 | **5 — Monitoring** | Background ownership tracking + role sync | ⬜ Planned |
 | **6 — Game integration** | Ownership/eligibility interfaces for POW | ⬜ Planned |
