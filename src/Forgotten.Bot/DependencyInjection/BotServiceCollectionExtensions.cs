@@ -2,6 +2,8 @@ using Discord;
 using Discord.Interactions;
 using Discord.WebSocket;
 using Forgotten.Bot.Configuration;
+using Forgotten.Bot.Embeds;
+using Forgotten.Bot.Services;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 
@@ -22,6 +24,14 @@ public static class BotServiceCollectionExtensions
             .ValidateDataAnnotations()
             .ValidateOnStart();
 
+        services.AddOptions<PresentationOptions>()
+            .Bind(configuration.GetSection(PresentationOptions.SectionName))
+            .ValidateDataAnnotations()
+            .ValidateOnStart();
+
+        services.AddSingleton<CommandRateLimiter>();
+        services.AddSingleton<NftEmbedFactory>();
+
         services.AddSingleton(new DiscordSocketConfig
         {
             // Slash commands only need the Guilds intent in Phase 0.
@@ -33,7 +43,14 @@ public static class BotServiceCollectionExtensions
         services.AddSingleton<DiscordSocketClient>();
         services.AddSingleton(sp => new InteractionService(
             sp.GetRequiredService<DiscordSocketClient>(),
-            new InteractionServiceConfig { LogLevel = LogSeverity.Info }));
+            new InteractionServiceConfig
+            {
+                LogLevel = LogSeverity.Info,
+                // Sync so ExecuteCommandAsync awaits the whole command while the
+                // per-interaction DI scope is still alive (handlers defer early, so
+                // Discord is acknowledged within the 3s window regardless).
+                DefaultRunMode = RunMode.Sync,
+            }));
 
         services.AddHostedService<DiscordBotService>();
 

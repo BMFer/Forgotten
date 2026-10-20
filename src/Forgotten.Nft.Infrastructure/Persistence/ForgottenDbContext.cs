@@ -1,3 +1,4 @@
+using Forgotten.Nft.Domain.Entities;
 using Microsoft.EntityFrameworkCore;
 
 namespace Forgotten.Nft.Infrastructure.Persistence;
@@ -19,6 +20,10 @@ public class ForgottenDbContext : DbContext
     {
     }
 
+    public DbSet<NftAsset> NftAssets => Set<NftAsset>();
+
+    public DbSet<NftAttribute> NftAttributes => Set<NftAttribute>();
+
     protected override void ConfigureConventions(ModelConfigurationBuilder configurationBuilder)
     {
         base.ConfigureConventions(configurationBuilder);
@@ -31,6 +36,6 @@ public class ForgottenDbContext : DbContext
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
         base.OnModelCreating(modelBuilder);
-        // Entity configurations are added from Phase 1 onwards.
+        modelBuilder.ApplyConfigurationsFromAssembly(typeof(ForgottenDbContext).Assembly);
     }
 }
