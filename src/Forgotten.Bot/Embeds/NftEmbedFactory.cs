@@ -1,8 +1,11 @@
 using System.Text;
 using Discord;
 using Forgotten.Bot.Configuration;
+using Forgotten.Nft.Application.Common;
 using Forgotten.Nft.Application.Configuration;
 using Forgotten.Nft.Application.DTOs;
+using Forgotten.Nft.Application.Models;
+using Forgotten.Nft.Domain.Entities;
 using Forgotten.Nft.Domain.Enums;
 using Microsoft.Extensions.Options;
 
@@ -108,9 +111,132 @@ public sealed class NftEmbedFactory
         return builder.Build();
     }
 
+    public Embed BuildVerificationEmbed(NftVerificationResult r)
+    {
+        var color = r.VerificationStatus switch
+        {
+            NftVerificationStatus.Verified => VerifiedColor,
+            NftVerificationStatus.Burned => WarnColor,
+            _ => NeutralColor,
+        };
+
+        var builder = new EmbedBuilder()
+            .WithTitle(Truncate(Sanitize(r.Name) is { Length: > 0 } name ? name : "NFT Verification", 256))
+            .WithColor(color)
+            .WithFooter($"Provider: {r.Provider ?? "n/a"} • level {(int)r.HighestLevel}/7 • snapshot, not proof of current ownership")
+            .WithCurrentTimestamp();
+
+        builder.AddField("Asset Exists", YesNo(r.AssetExists), inline: true);
+        builder.AddField("Supported NFT", YesNo(r.IsSupportedNft), inline: true);
+        builder.AddField("Collection Verified (on-chain)", YesNo(r.CollectionVerified), inline: true);
+        builder.AddField(
+            "Collection Approved (registry)",
+            r.CollectionApproved
+                ? $"YES{(Sanitize(r.CollectionName) is { Length: > 0 } cn ? $" — {Truncate(cn, 48)}" : string.Empty)}"
+                : "NO",
+            inline: true);
+        builder.AddField("Current Owner", r.OwnerAddress is null ? "—" : ShortenAddress(r.OwnerAddress), inline: true);
+        builder.AddField("Member Ownership", "Not evaluated (Phase 3)", inline: true);
+
+        if (r.CollectionAddress is not null)
+        {
+            builder.AddField(
+                "Collection",
+                $"{ShortenAddress(r.CollectionAddress)} • [Explorer]({ExplorerAddressUrl(r.CollectionAddress)})",
+                inline: false);
+        }
+
+        builder.AddField("Links", $"[View Asset]({ExplorerAddressUrl(r.AssetAddress)})", inline: false);
+        return builder.Build();
+    }
+
+    public Embed BuildCollectionEmbed(string collectionAddress, PagedResult<SolanaAsset> page, NftCollection? registry)
+    {
+        var builder = new EmbedBuilder()
+            .WithTitle(Truncate(Sanitize(registry?.DisplayName) is { Length: > 0 } dn ? dn : "Collection", 256))
+            .WithColor(NeutralColor)
+            .WithCurrentTimestamp();
+
+        builder.AddField("Collection", ShortenAddress(collectionAddress), inline: true);
+        builder.AddField("Approved (registry)", registry is { IsApproved: true } ? "YES" : "NO", inline: true);
+        if (page.TotalItems is int total)
+        {
+            builder.AddField("Total Items", total.ToString(), inline: true);
+        }
+
+        var names = string.Join(
+            "\n",
+            page.Items.Take(15).Select(a => $"• {Truncate(Sanitize(a.Name) is { Length: > 0 } n ? n : a.AssetAddress, 80)}"));
+        builder.AddField(
+            $"Items (page {page.Page})",
+            page.Items.Count == 0 ? "No items returned." : Truncate(names, 1024),
+            inline: false);
+
+        builder.AddField("Links", $"[View Collection]({ExplorerAddressUrl(collectionAddress)})", inline: false);
+        return builder.Build();
+    }
+
+    public Embed BuildRegistryEmbed(IReadOnlyList<NftCollection> collections)
+    {
+        var builder = new EmbedBuilder()
+            .WithTitle("Approved Collections")
+            .WithColor(NeutralColor)
+            .WithCurrentTimestamp();
+
+        if (collections.Count == 0)
+        {
+            builder.WithDescription("No collections are registered for this server. Add one with `/nft-admin collection-add`.");
+            return builder.Build();
+        }
+
+        var sb = new StringBuilder();
+        foreach (var c in collections.Take(20))
+        {
+            var name = Truncate(Sanitize(c.DisplayName) is { Length: > 0 } dn ? dn : "(unnamed)", 48);
+            sb.Append($"{(c.IsApproved ? "✅" : "⬜")} **{name}** — {ShortenAddress(c.CollectionAddress)}\n");
+        }
+
+        builder.WithDescription(Truncate(sb.ToString(), 4096));
+        return builder.Build();
+    }
+
+    public Embed BuildVerificationLogEmbed(IReadOnlyList<NftVerificationLog> logs)
+    {
+        var builder = new EmbedBuilder()
+            .WithTitle("Recent Verifications")
+            .WithColor(NeutralColor)
+            .WithCurrentTimestamp();
+
+        if (logs.Count == 0)
+        {
+            builder.WithDescription("No verification activity recorded yet.");
+            return builder.Build();
+        }
+
+        var sb = new StringBuilder();
+        foreach (var l in logs.Take(15))
+        {
+            var error = l.ErrorCode is { Length: > 0 } code ? $" ({code})" : string.Empty;
+            sb.Append($"`{l.CheckedAt:yyyy-MM-dd HH:mm}` {l.VerificationStatus} — {ShortenAddress(l.AssetAddress)}{error}\n");
+        }
+
+        builder.WithDescription(Truncate(sb.ToString(), 4096));
+        return builder.Build();
+    }
+
+    private static string YesNo(bool value) => value ? "YES" : "NO";
+
     public Embed BuildErrorEmbed(NftInspectionResult r) =>
         new EmbedBuilder()
             .WithTitle("Could not inspect NFT")
+            .WithColor(WarnColor)
+            .WithDescription(Truncate(Sanitize(r.ErrorMessage) ?? "An error occurred.", 1024))
+            .WithFooter(r.ErrorCode ?? "ERROR")
+            .Build();
+
+    public Embed BuildErrorEmbed(NftVerificationResult r) =>
+        new EmbedBuilder()
+            .WithTitle("Could not verify NFT")
             .WithColor(WarnColor)
             .WithDescription(Truncate(Sanitize(r.ErrorMessage) ?? "An error occurred.", 1024))
             .WithFooter(r.ErrorCode ?? "ERROR")

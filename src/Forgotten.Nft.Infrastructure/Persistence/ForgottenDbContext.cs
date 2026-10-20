@@ -24,6 +24,10 @@ public class ForgottenDbContext : DbContext
 
     public DbSet<NftAttribute> NftAttributes => Set<NftAttribute>();
 
+    public DbSet<NftCollection> NftCollections => Set<NftCollection>();
+
+    public DbSet<NftVerificationLog> NftVerificationLogs => Set<NftVerificationLog>();
+
     protected override void ConfigureConventions(ModelConfigurationBuilder configurationBuilder)
     {
         base.ConfigureConventions(configurationBuilder);
