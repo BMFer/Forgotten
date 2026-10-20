@@ -33,6 +33,8 @@ public static class ApplicationServiceCollectionExtensions
 
         services.AddMemoryCache();
         services.AddScoped<INftInspectionService, NftInspectionService>();
+        services.AddScoped<INftVerificationService, NftVerificationService>();
+        services.AddScoped<ICollectionRegistryService, CollectionRegistryService>();
 
         return services;
     }

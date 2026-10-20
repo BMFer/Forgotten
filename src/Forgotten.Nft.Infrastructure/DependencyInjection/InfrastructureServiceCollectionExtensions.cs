@@ -55,6 +55,8 @@ public static class InfrastructureServiceCollectionExtensions
         services.AddSingleton<ISolanaAssetProvider, DasSolanaAssetProvider>();
         services.AddSingleton<IMetadataResolver, MetadataResolver>();
         services.AddScoped<INftAssetRepository, NftAssetRepository>();
+        services.AddScoped<INftCollectionRepository, NftCollectionRepository>();
+        services.AddScoped<INftVerificationLogRepository, NftVerificationLogRepository>();
 
         return services;
     }

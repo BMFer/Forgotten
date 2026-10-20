@@ -39,11 +39,34 @@ builder.Services
 
 var host = builder.Build();
 
+// Apply any pending EF Core migrations to the runtime database (spec §9). This is
+// additive only — Migrate() never drops or recreates data — so the schema always
+// matches the code without a manual `dotnet ef database update` step.
+await MigrateDatabaseAsync(host.Services);
+
 // Startup banner (spec §20 / Phase 0): report environment, DB target, and the
 // security-relevant feature flags that are now in effect.
 LogStartupBanner(host.Services, builder.Environment.EnvironmentName);
 
 host.Run();
+
+static async Task MigrateDatabaseAsync(IServiceProvider services)
+{
+    using var scope = services.CreateScope();
+    var logger = scope.ServiceProvider.GetRequiredService<ILoggerFactory>().CreateLogger("Forgotten.Startup");
+    var dbContext = scope.ServiceProvider.GetRequiredService<ForgottenDbContext>();
+
+    var pending = (await dbContext.Database.GetPendingMigrationsAsync()).ToList();
+    if (pending.Count == 0)
+    {
+        logger.LogInformation("Database schema is up to date; no migrations to apply.");
+        return;
+    }
+
+    logger.LogInformation("Applying {Count} pending migration(s): {Migrations}", pending.Count, string.Join(", ", pending));
+    await dbContext.Database.MigrateAsync();
+    logger.LogInformation("Database migrations applied.");
+}
 
 static async Task RunInspectAsync(IConfiguration configuration, string address)
 {

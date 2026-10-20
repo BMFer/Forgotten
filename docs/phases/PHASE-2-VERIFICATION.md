@@ -2,7 +2,7 @@
 
 **Spec refs:** §4.2, §4.3, §6.3, §6.4, §6.5 (admin), §13, §9 (`NftCollections`,
 `NftVerificationLogs`), §17, §22.2
-**Status:** not started
+**Status:** ✅ code complete (2026-10-20, branch `phase-2-verification`) — live `/nft verify` ready; approve a collection to see L4
 **Deliverable (spec §22):** `/nft verify` distinguishes NFT validity, collection
 authenticity (on-chain), and administrative approval (registry) — three separate
 facts that are never conflated.
@@ -114,10 +114,21 @@ ownership.** Keep them distinct in data, logic, and UI.
 
 ## 7. Exit Gate — all must be checked to start Phase 3
 
-- [ ] `/nft verify` separates validity, on-chain verification, and approval — all
-      independently correct in tests.
-- [ ] Admin registry commands enforce per-guild admin perms and fail closed.
-- [ ] `NftCollections` + `NftVerificationLogs` migrations additive and applied.
-- [ ] Audit log populated and viewable via `/nft-admin verification-log`.
-- [ ] Build clean; Phase 2 tests green; docs (`DISCORD_COMMANDS.md`,
-      `SECURITY.md`, `DATABASE_SCHEMA.md`) updated.
+- [x] `/nft verify` separates validity, on-chain verification, and approval — all
+      independently correct in tests (independence verified both directions).
+- [x] Admin registry commands enforce per-guild admin perms and fail closed
+      (hard `RequireUserPermission(Administrator)` + `DefaultMemberPermissions`
+      gate + guild-only; guarded by a reflection test).
+- [x] `NftCollections` + `NftVerificationLogs` migration additive and applied
+      (`AddCollectionsAndLogs`).
+- [x] Audit log written on every verify; viewable via `/nft-admin verification-log`.
+- [x] Build clean (0 warnings); Phase 2 tests green (73 total: 43 unit, 23 security, 7 integration).
+- [ ] Docs (`DISCORD_COMMANDS.md`, `SECURITY.md`, `DATABASE_SCHEMA.md`) — pending.
+
+### Verification summary (2026-10-20)
+
+- `dotnet build Forgotten.slnx` → **0 warnings, 0 errors**.
+- `dotnet test` → **73 passed / 0 failed**.
+- `dotnet run` → bot registers `/nft` (now incl. verify + collection) and the
+  `/nft-admin` group to the dev guild; reaches Ready. Live `/nft verify` works
+  against the configured DAS endpoint.

@@ -94,9 +94,62 @@ public sealed class DasSolanaAssetProvider : ISolanaAssetProvider
         string walletAddress, int page, int pageSize, CancellationToken cancellationToken) =>
         throw new NotSupportedException("getAssetsByOwner is implemented in Phase 4.");
 
-    public Task<PagedResult<SolanaAsset>> GetAssetsByCollectionAsync(
-        string collectionAddress, int page, int pageSize, CancellationToken cancellationToken) =>
-        throw new NotSupportedException("getAssetsByGroup is implemented in Phase 2/4.");
+    public async Task<PagedResult<SolanaAsset>> GetAssetsByCollectionAsync(
+        string collectionAddress, int page, int pageSize, CancellationToken cancellationToken)
+    {
+        if (string.IsNullOrWhiteSpace(_options.DasEndpoint))
+        {
+            throw new InvalidOperationException("Solana DAS endpoint is not configured (Solana:DasEndpoint).");
+        }
+
+        // Bound pagination to prevent unbounded collection scans (spec §5.3).
+        page = Math.Max(1, page);
+        pageSize = Math.Clamp(pageSize, 1, Math.Max(1, _options.MaxPageSize));
+
+        var request = new
+        {
+            jsonrpc = "2.0",
+            id = "forgotten",
+            method = "getAssetsByGroup",
+            @params = new { groupKey = "collection", groupValue = collectionAddress, page, limit = pageSize },
+        };
+
+        var client = _httpClientFactory.CreateClient(InfrastructureServiceCollectionExtensions.SolanaHttpClientName);
+
+        using var httpResponse = await client
+            .PostAsJsonAsync(_options.DasEndpoint, request, JsonOptions, cancellationToken)
+            .ConfigureAwait(false);
+
+        httpResponse.EnsureSuccessStatusCode();
+
+        var payload = await httpResponse.Content
+            .ReadFromJsonAsync<DasRpcResponse<DasAssetList>>(JsonOptions, cancellationToken)
+            .ConfigureAwait(false);
+
+        if (payload?.Error is { } error)
+        {
+            if (IsNotFound(error))
+            {
+                return PagedResult<SolanaAsset>.Empty(page, pageSize);
+            }
+
+            throw new InvalidOperationException($"DAS error {error.Code}: {error.Message}");
+        }
+
+        var items = payload?.Result?.Items;
+        if (items is null || items.Count == 0)
+        {
+            return PagedResult<SolanaAsset>.Empty(page, pageSize);
+        }
+
+        return new PagedResult<SolanaAsset>
+        {
+            Items = items.Select(a => Map(a, a.Id ?? string.Empty)).ToList(),
+            Page = page,
+            PageSize = pageSize,
+            TotalItems = payload!.Result!.Total,
+        };
+    }
 
     private SolanaAsset Map(DasAsset asset, string requestedAddress)
     {

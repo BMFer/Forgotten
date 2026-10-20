@@ -19,6 +19,14 @@ internal sealed class DasError
     [JsonPropertyName("message")] public string? Message { get; set; }
 }
 
+internal sealed class DasAssetList
+{
+    [JsonPropertyName("total")] public int? Total { get; set; }
+    [JsonPropertyName("limit")] public int? Limit { get; set; }
+    [JsonPropertyName("page")] public int? Page { get; set; }
+    [JsonPropertyName("items")] public List<DasAsset>? Items { get; set; }
+}
+
 internal sealed class DasAsset
 {
     [JsonPropertyName("interface")] public string? Interface { get; set; }
