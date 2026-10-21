@@ -228,6 +228,48 @@ namespace Forgotten.Nft.Infrastructure.Persistence.Migrations
                     b.ToTable("NftCollections", (string)null);
                 });
 
+            modelBuilder.Entity("Forgotten.Nft.Domain.Entities.NftGallerySession", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("INTEGER");
+
+                    b.Property<string>("CollectionFilter")
+                        .HasMaxLength(64)
+                        .HasColumnType("TEXT");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("TEXT");
+
+                    b.Property<int>("CurrentPage")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<string>("DiscordUserId")
+                        .IsRequired()
+                        .HasMaxLength(20)
+                        .HasColumnType("TEXT");
+
+                    b.Property<DateTime>("ExpiresAt")
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("GuildId")
+                        .IsRequired()
+                        .HasMaxLength(20)
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("WalletAddress")
+                        .HasMaxLength(64)
+                        .HasColumnType("TEXT");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("DiscordUserId");
+
+                    b.HasIndex("ExpiresAt");
+
+                    b.ToTable("NftGallerySessions", (string)null);
+                });
+
             modelBuilder.Entity("Forgotten.Nft.Domain.Entities.NftVerificationLog", b =>
                 {
                     b.Property<int>("Id")

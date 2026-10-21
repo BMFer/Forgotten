@@ -32,6 +32,8 @@ public class ForgottenDbContext : DbContext
 
     public DbSet<DiscordWalletConnection> DiscordWalletConnections => Set<DiscordWalletConnection>();
 
+    public DbSet<NftGallerySession> NftGallerySessions => Set<NftGallerySession>();
+
     protected override void ConfigureConventions(ModelConfigurationBuilder configurationBuilder)
     {
         base.ConfigureConventions(configurationBuilder);

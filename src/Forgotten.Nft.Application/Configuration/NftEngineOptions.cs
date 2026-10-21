@@ -32,5 +32,13 @@ public sealed class NftEngineOptions
     [Range(1, 50)]
     public int MaximumLinkedWallets { get; set; } = 5;
 
+    /// <summary>
+    /// Upper bound on how many owned NFTs a gallery loads across a member's wallets,
+    /// keeping memory bounded (spec §6.2, §19). If a member owns more, the gallery
+    /// discloses that it is showing the first N.
+    /// </summary>
+    [Range(1, 1000)]
+    public int GalleryMaxItems { get; set; } = 100;
+
     public bool EnablePowIntegration { get; set; } = false;
 }

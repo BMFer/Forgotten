@@ -224,6 +224,67 @@ public sealed class NftEmbedFactory
         return builder.Build();
     }
 
+    public Embed BuildGalleryEmbed(GalleryView view)
+    {
+        if (view.Status == GalleryViewStatus.Empty)
+        {
+            var reason = view.CollectionFilter is { Length: > 0 }
+                ? "No NFTs in your verified wallets match that collection filter."
+                : "No NFTs found in your verified wallets.";
+            return new EmbedBuilder()
+                .WithTitle("FORGOTTEN NFT Gallery")
+                .WithColor(NeutralColor)
+                .WithDescription(reason)
+                .Build();
+        }
+
+        var item = view.Item!;
+        var builder = new EmbedBuilder()
+            .WithTitle(Truncate(Sanitize(item.Name) is { Length: > 0 } name ? name : "Unknown NFT", 256))
+            .WithColor(VerifiedColor)
+            .WithFooter(BuildGalleryFooter(view))
+            .WithCurrentTimestamp();
+
+        var image = DisplayableImageUrl(item.ImageUrl);
+        if (image is not null)
+        {
+            builder.WithImageUrl(image);
+        }
+        else if (!string.IsNullOrWhiteSpace(_presentation.PlaceholderImageUrl))
+        {
+            builder.WithImageUrl(_presentation.PlaceholderImageUrl);
+        }
+
+        if (item.CollectionAddress is not null)
+        {
+            builder.AddField("Collection", ShortenAddress(item.CollectionAddress), inline: true);
+        }
+
+        if (!string.IsNullOrWhiteSpace(item.Symbol))
+        {
+            builder.AddField("Symbol", Truncate(Sanitize(item.Symbol)!, 64), inline: true);
+        }
+
+        builder.AddField("Links", $"[View on Explorer]({ExplorerAddressUrl(item.AssetAddress)})", inline: false);
+        return builder.Build();
+    }
+
+    private string BuildGalleryFooter(GalleryView view)
+    {
+        var footer = $"NFT {view.PageNumber} of {view.TotalCount}";
+        if (view.CollectionFilter is { Length: > 0 })
+        {
+            footer += " • filtered";
+        }
+
+        if (view.Truncated)
+        {
+            footer += " • showing first " + view.TotalCount;
+        }
+
+        return footer;
+    }
+
     private static string YesNo(bool value) => value ? "YES" : "NO";
 
     public Embed BuildErrorEmbed(NftInspectionResult r) =>

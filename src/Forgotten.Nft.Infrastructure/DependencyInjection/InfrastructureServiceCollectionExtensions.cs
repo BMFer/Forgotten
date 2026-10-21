@@ -61,6 +61,7 @@ public static class InfrastructureServiceCollectionExtensions
         services.AddScoped<INftVerificationLogRepository, NftVerificationLogRepository>();
         services.AddScoped<IWalletChallengeRepository, WalletChallengeRepository>();
         services.AddScoped<IDiscordWalletConnectionRepository, DiscordWalletConnectionRepository>();
+        services.AddScoped<INftGallerySessionRepository, NftGallerySessionRepository>();
 
         return services;
     }
