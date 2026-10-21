@@ -17,6 +17,59 @@ namespace Forgotten.Nft.Infrastructure.Persistence.Migrations
 #pragma warning disable 612, 618
             modelBuilder.HasAnnotation("ProductVersion", "10.0.13");
 
+            modelBuilder.Entity("Forgotten.Nft.Domain.Entities.DiscordWalletConnection", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("INTEGER");
+
+                    b.Property<string>("Blockchain")
+                        .IsRequired()
+                        .HasMaxLength(32)
+                        .HasColumnType("TEXT");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("TEXT");
+
+                    b.Property<DateTime?>("DisconnectedAt")
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("DiscordUserId")
+                        .IsRequired()
+                        .HasMaxLength(20)
+                        .HasColumnType("TEXT");
+
+                    b.Property<bool>("IsPrimary")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<DateTime>("LastVerifiedAt")
+                        .HasColumnType("TEXT");
+
+                    b.Property<DateTime>("UpdatedAt")
+                        .HasColumnType("TEXT");
+
+                    b.Property<DateTime>("VerifiedAt")
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("WalletAddress")
+                        .IsRequired()
+                        .HasMaxLength(64)
+                        .HasColumnType("TEXT");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("DiscordUserId");
+
+                    b.HasIndex("Blockchain", "WalletAddress")
+                        .IsUnique()
+                        .HasFilter("\"DisconnectedAt\" IS NULL");
+
+                    b.HasIndex("DiscordUserId", "Blockchain", "WalletAddress")
+                        .IsUnique();
+
+                    b.ToTable("DiscordWalletConnections", (string)null);
+                });
+
             modelBuilder.Entity("Forgotten.Nft.Domain.Entities.NftAsset", b =>
                 {
                     b.Property<int>("Id")
@@ -222,6 +275,58 @@ namespace Forgotten.Nft.Infrastructure.Persistence.Migrations
                     b.HasIndex("GuildId", "CheckedAt");
 
                     b.ToTable("NftVerificationLogs", (string)null);
+                });
+
+            modelBuilder.Entity("Forgotten.Nft.Domain.Entities.WalletVerificationChallenge", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("INTEGER");
+
+                    b.Property<DateTime?>("ConsumedAt")
+                        .HasColumnType("TEXT");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("DiscordUserId")
+                        .IsRequired()
+                        .HasMaxLength(20)
+                        .HasColumnType("TEXT");
+
+                    b.Property<DateTime>("ExpiresAt")
+                        .HasColumnType("TEXT");
+
+                    b.Property<DateTime>("IssuedAt")
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("Nonce")
+                        .IsRequired()
+                        .HasMaxLength(64)
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("SessionTokenHash")
+                        .IsRequired()
+                        .HasMaxLength(64)
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("Status")
+                        .IsRequired()
+                        .HasMaxLength(16)
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("WalletAddress")
+                        .HasMaxLength(64)
+                        .HasColumnType("TEXT");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("ExpiresAt");
+
+                    b.HasIndex("SessionTokenHash")
+                        .IsUnique();
+
+                    b.ToTable("WalletVerificationChallenges", (string)null);
                 });
 
             modelBuilder.Entity("Forgotten.Nft.Domain.Entities.NftAttribute", b =>

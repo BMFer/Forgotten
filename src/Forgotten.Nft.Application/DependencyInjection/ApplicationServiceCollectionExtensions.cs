@@ -28,13 +28,21 @@ public static class ApplicationServiceCollectionExtensions
             .ValidateDataAnnotations()
             .ValidateOnStart();
 
+        services.AddOptions<WalletVerificationOptions>()
+            .Bind(configuration.GetSection(WalletVerificationOptions.SectionName))
+            .ValidateDataAnnotations()
+            .ValidateOnStart();
+
         services.AddSingleton<IValidateOptions<NftEngineOptions>, NftEngineOptionsValidator>();
         services.AddSingleton<IValidateOptions<SolanaOptions>, SolanaOptionsValidator>();
+        services.AddSingleton<IValidateOptions<WalletVerificationOptions>, WalletVerificationOptionsValidator>();
 
         services.AddMemoryCache();
         services.AddScoped<INftInspectionService, NftInspectionService>();
         services.AddScoped<INftVerificationService, NftVerificationService>();
         services.AddScoped<ICollectionRegistryService, CollectionRegistryService>();
+        services.AddScoped<IWalletVerificationService, WalletVerificationService>();
+        services.AddScoped<IWalletConnectionService, WalletConnectionService>();
 
         return services;
     }

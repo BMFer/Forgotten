@@ -28,6 +28,10 @@ public class ForgottenDbContext : DbContext
 
     public DbSet<NftVerificationLog> NftVerificationLogs => Set<NftVerificationLog>();
 
+    public DbSet<WalletVerificationChallenge> WalletVerificationChallenges => Set<WalletVerificationChallenge>();
+
+    public DbSet<DiscordWalletConnection> DiscordWalletConnections => Set<DiscordWalletConnection>();
+
     protected override void ConfigureConventions(ModelConfigurationBuilder configurationBuilder)
     {
         base.ConfigureConventions(configurationBuilder);
