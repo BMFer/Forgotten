@@ -5,10 +5,10 @@ on Discord.Net. FORGOTTEN lets Discord members inspect Solana NFTs, cryptographi
 prove wallet ownership, browse their collections, and expose verified ownership to
 external games — without hardcoding any single NFT collection.
 
-> **Status:** Phases 0–3 complete and running. NFT inspection/verification, the
-> `/nft-admin` registry, and **cryptographic wallet verification** (`/wallet`, via
-> the Ed25519 sign-in site) all work. Phase 4 (interactive NFT gallery) is next —
-> see the [Roadmap](#roadmap).
+> **Status:** Phases 0–4 complete and running. NFT inspection/verification, the
+> `/nft-admin` registry, **cryptographic wallet verification** (`/wallet`), and an
+> **interactive NFT gallery** (`/nft gallery`) all work. Phase 5 (ownership
+> monitoring + Discord role sync) is next — see the [Roadmap](#roadmap).
 
 The engine is **collection-agnostic**: it validates and displays NFTs from any
 compatible Solana collection, while game-specific logic (e.g. Dead Mint Carnival /
@@ -107,6 +107,7 @@ Member commands:
 |---|---|
 | `/nft inspect <address>` | Inspect an NFT: artwork, owner, traits, status |
 | `/nft verify <address>` | Layered verification — validity · on-chain collection · registry approval |
+| `/nft gallery [collection]` | Browse your verified wallets' NFTs — paginated, interactive buttons |
 | `/nft collection <address>` | Show a collection and a page of its NFTs |
 | `/nft attributes <address>` | Show just the NFT's traits |
 | `/nft refresh <address>` | Re-fetch an NFT, bypassing the cache |
@@ -178,7 +179,7 @@ auto-dropped or recreated. Pending migrations are applied automatically when the
 bot starts (additive `Database.Migrate()`), so the schema stays in sync with the
 code with no manual step. Tables so far: `NftAssets`, `NftAttributes` (Phase 1),
 `NftCollections`, `NftVerificationLogs` (Phase 2), `WalletVerificationChallenges`,
-`DiscordWalletConnections` (Phase 3).
+`DiscordWalletConnections` (Phase 3), `NftGallerySessions` (Phase 4).
 
 To add or inspect migrations during development:
 
@@ -199,8 +200,8 @@ Each phase is a self-contained, tested vertical slice. Full guides live in
 | **1 — Foundation** | `/nft inspect` against a DAS provider | ✅ Complete |
 | **2 — Verification** | `/nft verify` + collection approval registry | ✅ Complete |
 | **3 — Wallet** | Cryptographic Ed25519 wallet ownership proof | ✅ Complete |
-| **4 — Gallery** | Interactive, paginated `/nft gallery` | ⬜ Next |
-| **5 — Monitoring** | Background ownership tracking + role sync | ⬜ Planned |
+| **4 — Gallery** | Interactive, paginated `/nft gallery` | ✅ Complete |
+| **5 — Monitoring** | Background ownership tracking + role sync | ⬜ Next |
 | **6 — Game integration** | Ownership/eligibility interfaces for POW | ⬜ Planned |
 
 ## Security principles
