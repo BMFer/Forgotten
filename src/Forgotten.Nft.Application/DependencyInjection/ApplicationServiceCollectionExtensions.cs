@@ -43,6 +43,7 @@ public static class ApplicationServiceCollectionExtensions
         services.AddScoped<ICollectionRegistryService, CollectionRegistryService>();
         services.AddScoped<IWalletVerificationService, WalletVerificationService>();
         services.AddScoped<IWalletConnectionService, WalletConnectionService>();
+        services.AddScoped<INftGalleryService, NftGalleryService>();
 
         return services;
     }

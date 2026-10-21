@@ -1,9 +1,11 @@
 using Discord;
 using Discord.Interactions;
+using Forgotten.Bot.Components;
 using Forgotten.Bot.Embeds;
 using Forgotten.Bot.Services;
 using Forgotten.Nft.Application.Abstractions;
 using Forgotten.Nft.Application.Configuration;
+using Forgotten.Nft.Application.DTOs;
 using Forgotten.Nft.Domain.ValueObjects;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
@@ -19,6 +21,7 @@ public sealed class NftCommands : InteractionModuleBase<SocketInteractionContext
 {
     private readonly INftInspectionService _inspection;
     private readonly INftVerificationService _verification;
+    private readonly INftGalleryService _gallery;
     private readonly ISolanaAssetProvider _assetProvider;
     private readonly ICollectionRegistryService _registry;
     private readonly NftEmbedFactory _embeds;
@@ -29,6 +32,7 @@ public sealed class NftCommands : InteractionModuleBase<SocketInteractionContext
     public NftCommands(
         INftInspectionService inspection,
         INftVerificationService verification,
+        INftGalleryService gallery,
         ISolanaAssetProvider assetProvider,
         ICollectionRegistryService registry,
         NftEmbedFactory embeds,
@@ -38,12 +42,44 @@ public sealed class NftCommands : InteractionModuleBase<SocketInteractionContext
     {
         _inspection = inspection;
         _verification = verification;
+        _gallery = gallery;
         _assetProvider = assetProvider;
         _registry = registry;
         _embeds = embeds;
         _rateLimiter = rateLimiter;
         _solanaOptions = solanaOptions.Value;
         _logger = logger;
+    }
+
+    [SlashCommand("gallery", "Browse the NFTs held by your verified wallet(s).")]
+    public async Task GalleryAsync([Summary("collection", "Optional collection address to filter by")] string? collection = null)
+    {
+        if (!_rateLimiter.TryAcquire(Context.User.Id, "gallery", out var retryAfter))
+        {
+            await RespondAsync($"⏳ Slow down — try again in {Math.Ceiling(retryAfter.TotalSeconds)}s.", ephemeral: true)
+                .ConfigureAwait(false);
+            return;
+        }
+
+        // Private by default so wallet holdings aren't exposed publicly (spec §12, §16.13).
+        await DeferAsync(ephemeral: true).ConfigureAwait(false);
+
+        var view = await _gallery.CreateAsync(Context.User.Id, Context.Guild?.Id ?? 0UL, collection, CancellationToken.None)
+            .ConfigureAwait(false);
+
+        if (view.Status == GalleryViewStatus.NoWallet)
+        {
+            await ModifyOriginalResponseAsync(m =>
+                m.Content = "You need a verified wallet first. Use `/wallet connect`.").ConfigureAwait(false);
+            return;
+        }
+
+        await ModifyOriginalResponseAsync(m =>
+        {
+            m.Embed = _embeds.BuildGalleryEmbed(view);
+            m.Components = GalleryComponents.Build(view);
+            m.AllowedMentions = AllowedMentions.None;
+        }).ConfigureAwait(false);
     }
 
     [SlashCommand("verify", "Verify an NFT: validity, on-chain collection, and registry approval.")]
@@ -133,6 +169,7 @@ public sealed class NftCommands : InteractionModuleBase<SocketInteractionContext
             .WithDescription(
                 "`/nft inspect <address>` — inspect an NFT and show its artwork, owner, and traits.\n" +
                 "`/nft verify <address>` — validity, on-chain collection, and registry approval.\n" +
+                "`/nft gallery [collection]` — browse the NFTs in your verified wallet(s).\n" +
                 "`/nft collection <address>` — show a collection and a page of its NFTs.\n" +
                 "`/nft attributes <address>` — show just the NFT's traits.\n" +
                 "`/nft refresh <address>` — re-fetch an NFT, bypassing the cache.\n" +

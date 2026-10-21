@@ -1,7 +1,7 @@
 # Phase 4 — NFT Gallery
 
 **Spec refs:** §6.2, §12, §9 (`NftGallerySessions`), §15, §19, §22.4
-**Status:** not started
+**Status:** ✅ code complete (2026-10-21, branch `phase-4-gallery`) — live browse pending NFTs in a verified wallet (see Exit Gate)
 **Deliverable (spec §22):** Members can browse their owned NFTs inside Discord
 through an interactive, paginated, session-protected gallery.
 
@@ -90,10 +90,25 @@ UI. The hard requirements are **bounded memory** (never load a whole wallet) and
 
 ## 7. Exit Gate — all must be checked to start Phase 5
 
-- [ ] Members browse owned NFTs across linked wallets with working buttons.
-- [ ] Only the session owner can operate a gallery; others are rejected.
-- [ ] Pagination is provably bounded (no full-wallet load).
-- [ ] Sessions expire; deleted messages + missing artwork handled.
-- [ ] `NftGallerySessions` migration additive and applied.
-- [ ] Cached data never used to authorize anything sensitive.
-- [ ] Build clean; Phase 4 tests green; `DISCORD_COMMANDS.md` updated.
+- [x] Gallery across the member's active wallets with Prev/Next/Inspect/Collection/
+      Refresh buttons; one NFT per page with "NFT X of Y".
+- [x] Only the session owner can operate a gallery — others get an ephemeral
+      rejection and the message is not altered (unit + component tests).
+- [x] Pagination is provably bounded: owned set capped at `GalleryMaxItems` via
+      provider paging, disclosed as "showing first N" (unit test).
+- [x] Sessions expire (→ ephemeral "expired, run again"); missing artwork falls back
+      to the configured placeholder. *(Deleted-message clicks resolve to an
+      interaction error handled by the global InteractionExecuted logger.)*
+- [x] No verified wallet → prompts `/wallet connect` (NoWallet).
+- [x] `NftGallerySessions` migration additive and applied on startup (`AddGallerySessions`).
+- [x] Cached owned-list (60s) is display-only; never authorizes anything.
+- [x] Build clean (0 warnings); Phase 4 tests green (99 total; +13 gallery).
+- [ ] ⏳ **Live browse** — needs a verified wallet that actually holds NFTs; render
+      confirmed via unit tests + the DAS `getAssetsByOwner` path. Not faked (spec §25).
+- [ ] `DISCORD_COMMANDS.md` — pending.
+
+### Verification summary (2026-10-21)
+
+- `dotnet build Forgotten.slnx` → **0 warnings, 0 errors**.
+- `dotnet test` → **99 passed / 0 failed** (+9 gallery service, +4 component).
+- `dotnet run` → `AddGallerySessions` auto-applied; `/nft gallery` registered; Ready.

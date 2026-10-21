@@ -92,28 +92,28 @@ public sealed class DasSolanaAssetProvider : ISolanaAssetProvider
 
     public Task<PagedResult<SolanaAsset>> GetAssetsByOwnerAsync(
         string walletAddress, int page, int pageSize, CancellationToken cancellationToken) =>
-        throw new NotSupportedException("getAssetsByOwner is implemented in Phase 4.");
+        GetAssetListAsync("getAssetsByOwner", new { ownerAddress = walletAddress, page, limit = ClampPageSize(pageSize) }, page, ClampPageSize(pageSize), cancellationToken);
 
-    public async Task<PagedResult<SolanaAsset>> GetAssetsByCollectionAsync(
-        string collectionAddress, int page, int pageSize, CancellationToken cancellationToken)
+    public Task<PagedResult<SolanaAsset>> GetAssetsByCollectionAsync(
+        string collectionAddress, int page, int pageSize, CancellationToken cancellationToken) =>
+        GetAssetListAsync(
+            "getAssetsByGroup",
+            new { groupKey = "collection", groupValue = collectionAddress, page = Math.Max(1, page), limit = ClampPageSize(pageSize) },
+            Math.Max(1, page), ClampPageSize(pageSize), cancellationToken);
+
+    private int ClampPageSize(int pageSize) => Math.Clamp(pageSize, 1, Math.Max(1, _options.MaxPageSize));
+
+    // Shared JSON-RPC call for the paged DAS "list" methods (getAssetsByOwner / getAssetsByGroup).
+    // Pagination is bounded by the caller to prevent unbounded scans (spec §5.3).
+    private async Task<PagedResult<SolanaAsset>> GetAssetListAsync(
+        string method, object parameters, int page, int pageSize, CancellationToken cancellationToken)
     {
         if (string.IsNullOrWhiteSpace(_options.DasEndpoint))
         {
             throw new InvalidOperationException("Solana DAS endpoint is not configured (Solana:DasEndpoint).");
         }
 
-        // Bound pagination to prevent unbounded collection scans (spec §5.3).
-        page = Math.Max(1, page);
-        pageSize = Math.Clamp(pageSize, 1, Math.Max(1, _options.MaxPageSize));
-
-        var request = new
-        {
-            jsonrpc = "2.0",
-            id = "forgotten",
-            method = "getAssetsByGroup",
-            @params = new { groupKey = "collection", groupValue = collectionAddress, page, limit = pageSize },
-        };
-
+        var request = new { jsonrpc = "2.0", id = "forgotten", method, @params = parameters };
         var client = _httpClientFactory.CreateClient(InfrastructureServiceCollectionExtensions.SolanaHttpClientName);
 
         using var httpResponse = await client
