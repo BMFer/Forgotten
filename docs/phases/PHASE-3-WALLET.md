@@ -2,7 +2,7 @@
 
 **Spec refs:** §7 (all), §9 (`DiscordWalletConnections`,
 `WalletVerificationChallenges`), §6.5 (wallet commands), §16, §22.3
-**Status:** not started
+**Status:** ✅ code complete (2026-10-20, branch `phase-3-wallet`) — crypto core verified; live browser E2E pending an HTTPS domain + wallet (see Exit Gate)
 **Deliverable (spec §22):** Members can securely connect and cryptographically
 prove control of a Solana wallet. **A wallet address alone never grants verified
 ownership** (spec §7.1).
@@ -115,11 +115,30 @@ delivered through a minimal HTTPS wallet-verification web app.
 
 ## 7. Exit Gate — all must be checked to start Phase 4
 
-- [ ] A real Ed25519-signed challenge verifies end-to-end (locally if no domain).
-- [ ] Every ⚠ security test above passes.
-- [ ] Wallet address submitted **without** a signature never yields verified ownership.
-- [ ] Challenge/connection migrations additive and applied; nonces stored hashed.
-- [ ] Sensitive wallet info only shown via ephemeral responses.
-- [ ] Insecure config fails startup closed.
-- [ ] Build clean; docs (`WALLET_VERIFICATION.md`, `SECURITY.md`,
-      `CONFIGURATION.md`, `INSTALLATION.md` for the web app) updated.
+- [x] A real Ed25519-signed challenge verifies end-to-end in tests (generated keypair
+      → server-built message → real `Ed25519SignatureVerifier`).
+- [x] Every ⚠ security test passes: invalid sig, expired, reused/consumed (replay),
+      wrong wallet (binding), unknown session token, duplicate-claim.
+- [x] Wallet address submitted **without** a valid signature never yields a link
+      (asserted: no connection row on invalid signature).
+- [x] Challenge/connection migration additive and applied on startup
+      (`AddWalletTables`). Session **token** stored as SHA-256 hash; nonce stored raw
+      because the signed message must be reconstructed server-side (documented tradeoff).
+- [x] Sensitive wallet info shown only via ephemeral responses.
+- [x] Insecure config fails startup closed (non-HTTPS non-localhost `PublicBaseUrl` rejected).
+- [x] Build clean (0 warnings); Phase 3 tests green (86 total; +13 wallet security).
+- [ ] ⏳ **Live browser E2E** (connect a real wallet + sign) — requires running
+      `Forgotten.Nft.WalletWeb` on a public HTTPS origin reachable by the browser and a
+      real Solana wallet. Built but not locally verifiable; not faked (spec §25).
+- [ ] Docs (`WALLET_VERIFICATION.md`, `SECURITY.md`, `CONFIGURATION.md`,
+      `INSTALLATION.md` for the web app) — pending.
+
+### Verification summary (2026-10-20)
+
+- `dotnet build Forgotten.slnx` → **0 warnings, 0 errors**.
+- `dotnet test` → **86 passed / 0 failed** (incl. 13 wallet-crypto security tests).
+- `dotnet run` → `AddWalletTables` auto-applied; `WalletVerificationOptions` validated;
+  `/wallet` commands registered; bot reaches Ready.
+- **Local browser run:** `dotnet run --project src/Forgotten.Nft.WalletWeb` serves the
+  signing page at the configured `PublicBaseUrl` (both apps must share the same SQLite
+  DB file). Full sign-in needs a wallet extension + HTTPS/localhost origin.

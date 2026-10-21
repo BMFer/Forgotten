@@ -2,10 +2,11 @@ namespace Forgotten.Nft.Domain.ValueObjects;
 
 /// <summary>
 /// Minimal Base58 decoder (Bitcoin/Solana alphabet) used to validate that a
-/// string is a well-formed Solana address (a 32-byte Ed25519 public key).
-/// Dependency-free so the Domain layer carries no external packages.
+/// string is a well-formed Solana address (a 32-byte Ed25519 public key) and to
+/// recover the raw public-key bytes. Dependency-free so the Domain layer carries
+/// no external packages.
 /// </summary>
-internal static class Base58
+public static class Base58
 {
     private const string Alphabet = "123456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz";
 
@@ -21,6 +22,48 @@ internal static class Base58
         }
 
         return map;
+    }
+
+    /// <summary>Encodes bytes to a Base58 string (Bitcoin/Solana alphabet).</summary>
+    public static string Encode(byte[] data)
+    {
+        if (data is null || data.Length == 0)
+        {
+            return string.Empty;
+        }
+
+        var leadingZeros = 0;
+        while (leadingZeros < data.Length && data[leadingZeros] == 0)
+        {
+            leadingZeros++;
+        }
+
+        var input = (byte[])data.Clone();
+        var result = new System.Text.StringBuilder();
+        var start = leadingZeros;
+        while (start < input.Length)
+        {
+            var remainder = 0;
+            for (var i = start; i < input.Length; i++)
+            {
+                var accumulator = (remainder << 8) + (input[i] & 0xFF);
+                input[i] = (byte)(accumulator / 58);
+                remainder = accumulator % 58;
+            }
+
+            result.Insert(0, Alphabet[remainder]);
+            if (input[start] == 0)
+            {
+                start++;
+            }
+        }
+
+        for (var i = 0; i < leadingZeros; i++)
+        {
+            result.Insert(0, '1');
+        }
+
+        return result.ToString();
     }
 
     /// <summary>

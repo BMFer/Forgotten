@@ -5,6 +5,7 @@ using Forgotten.Nft.Infrastructure.Blockchain;
 using Forgotten.Nft.Infrastructure.Configuration;
 using Forgotten.Nft.Infrastructure.Metadata;
 using Forgotten.Nft.Infrastructure.Persistence;
+using Forgotten.Nft.Infrastructure.Security;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
@@ -54,9 +55,12 @@ public static class InfrastructureServiceCollectionExtensions
 
         services.AddSingleton<ISolanaAssetProvider, DasSolanaAssetProvider>();
         services.AddSingleton<IMetadataResolver, MetadataResolver>();
+        services.AddSingleton<ISignatureVerifier, Ed25519SignatureVerifier>();
         services.AddScoped<INftAssetRepository, NftAssetRepository>();
         services.AddScoped<INftCollectionRepository, NftCollectionRepository>();
         services.AddScoped<INftVerificationLogRepository, NftVerificationLogRepository>();
+        services.AddScoped<IWalletChallengeRepository, WalletChallengeRepository>();
+        services.AddScoped<IDiscordWalletConnectionRepository, DiscordWalletConnectionRepository>();
 
         return services;
     }
