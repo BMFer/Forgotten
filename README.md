@@ -5,9 +5,9 @@ on Discord.Net. FORGOTTEN lets Discord members inspect Solana NFTs, cryptographi
 prove wallet ownership, browse their collections, and expose verified ownership to
 external games — without hardcoding any single NFT collection.
 
-> **Status:** Phases 0–2 complete and running. `/nft inspect`, `/nft verify`,
-> `/nft collection`, and the `/nft-admin` registry tools work against a live
-> Metaplex DAS provider. Phase 3 (cryptographic wallet verification) is next —
+> **Status:** Phases 0–3 complete and running. NFT inspection/verification, the
+> `/nft-admin` registry, and **cryptographic wallet verification** (`/wallet`, via
+> the Ed25519 sign-in site) all work. Phase 4 (interactive NFT gallery) is next —
 > see the [Roadmap](#roadmap).
 
 The engine is **collection-agnostic**: it validates and displays NFTs from any
@@ -57,6 +57,7 @@ references Discord.Net or EF Core. See [docs/ARCHITECTURE.md](docs/ARCHITECTURE.
 - [.NET 10 SDK](https://dotnet.microsoft.com/download) (10.0.100+)
 - A Discord bot application + token ([Discord Developer Portal](https://discord.com/developers/applications))
 - A DAS-compatible Solana RPC endpoint (Metaplex DAS — e.g. Helius) for NFT inspection/verification. Must support the `getAsset` method; plain RPCs without DAS won't work.
+- **For wallet verification:** a reachable origin for the `Forgotten.Nft.WalletWeb` site — `localhost` works for a single-machine test; a public **HTTPS** URL is required for other members to verify. Members sign with a Solana wallet (e.g. Phantom).
 
 ### Build & test
 
@@ -111,6 +112,17 @@ Member commands:
 | `/nft refresh <address>` | Re-fetch an NFT, bypassing the cache |
 | `/nft help` | Usage help |
 
+Wallet commands (all responses ephemeral):
+
+| Command | Description |
+|---|---|
+| `/wallet connect` | Get a one-time link to cryptographically verify a wallet (Ed25519 sign-in) |
+| `/wallet verify` | Check whether you have a verified wallet |
+| `/wallet list` | List your connected wallets |
+| `/wallet status` | Show verification status + primary wallet |
+| `/wallet primary <address>` | Set your primary wallet |
+| `/wallet disconnect <address>` | Disconnect a wallet |
+
 Administrator commands (guild administrators only; responses are ephemeral):
 
 | Command | Description |
@@ -123,8 +135,25 @@ Administrator commands (guild administrators only; responses are ephemeral):
 | `/nft-admin verification-log` | Recent verification activity |
 
 > Verification keeps three facts strictly separate: **on-chain collection
-> verification ≠ registry approval ≠ ownership**. Ownership lines read
-> "not evaluated" until Phase 3 lands cryptographic wallet proof.
+> verification ≠ registry approval ≠ ownership**.
+
+## Wallet verification
+
+Wallet ownership is proven cryptographically — never by submitting an address
+(spec §7.1). `/wallet connect` issues a short-lived, single-use link to the
+`Forgotten.Nft.WalletWeb` site; the member connects a Solana wallet and signs a
+server-built message bound to their Discord account, the wallet, a nonce, and the
+domain. The signature is verified server-side with Ed25519.
+
+The web app shares the bot's SQLite database and must run at the origin configured
+in `WalletVerification:PublicBaseUrl` (HTTPS in production; `localhost` for a local test):
+
+```bash
+# serve the signing site (point it at the same DB the bot uses)
+dotnet run --project src/Forgotten.Nft.WalletWeb
+```
+
+Keys and seed phrases are never requested, transmitted, or stored.
 
 ## Configuration overview
 
@@ -135,6 +164,7 @@ Administrator commands (guild administrators only; responses are ephemeral):
 | `Solana` | Network, DAS/RPC endpoints, timeouts, paging, cache TTL | DAS endpoint/API keys via secrets |
 | `Metadata` | IPFS/Arweave gateways, size/time/redirect limits | SSRF-guarded fetches |
 | `Presentation` | Explorer base URL, placeholder image, command cooldown | — |
+| `WalletVerification` | Public base URL, domain, session TTL, max wallets, duplicate-claim policy | Must be HTTPS (localhost exempt); fails closed |
 | `NftEngine` | Feature flags (monitoring, gallery, POW, limits) | Validated at startup |
 
 All options are strongly typed and validated on startup (DataAnnotations +
@@ -147,7 +177,8 @@ SQLite via EF Core, evolved **only** through migrations — the database is neve
 auto-dropped or recreated. Pending migrations are applied automatically when the
 bot starts (additive `Database.Migrate()`), so the schema stays in sync with the
 code with no manual step. Tables so far: `NftAssets`, `NftAttributes` (Phase 1),
-`NftCollections`, `NftVerificationLogs` (Phase 2).
+`NftCollections`, `NftVerificationLogs` (Phase 2), `WalletVerificationChallenges`,
+`DiscordWalletConnections` (Phase 3).
 
 To add or inspect migrations during development:
 
@@ -167,8 +198,8 @@ Each phase is a self-contained, tested vertical slice. Full guides live in
 | **0 — Bootstrap** | Solution, host, DI, config, Discord + SQLite foundation | ✅ Complete |
 | **1 — Foundation** | `/nft inspect` against a DAS provider | ✅ Complete |
 | **2 — Verification** | `/nft verify` + collection approval registry | ✅ Complete |
-| **3 — Wallet** | Cryptographic Ed25519 wallet ownership proof | ⬜ Next |
-| **4 — Gallery** | Interactive, paginated `/nft gallery` | ⬜ Planned |
+| **3 — Wallet** | Cryptographic Ed25519 wallet ownership proof | ✅ Complete |
+| **4 — Gallery** | Interactive, paginated `/nft gallery` | ⬜ Next |
 | **5 — Monitoring** | Background ownership tracking + role sync | ⬜ Planned |
 | **6 — Game integration** | Ownership/eligibility interfaces for POW | ⬜ Planned |
 
