@@ -55,4 +55,12 @@ public sealed class NftCollectionRepository : INftCollectionRepository
         await _dbContext.SaveChangesAsync(cancellationToken).ConfigureAwait(false);
         return true;
     }
+
+    public async Task<IReadOnlyList<string>> ListApprovedCollectionAddressesAsync(string blockchain, CancellationToken cancellationToken) =>
+        await _dbContext.NftCollections
+            .Where(c => c.Blockchain == blockchain && c.IsApproved)
+            .Select(c => c.CollectionAddress)
+            .Distinct()
+            .ToListAsync(cancellationToken)
+            .ConfigureAwait(false);
 }

@@ -70,6 +70,51 @@ namespace Forgotten.Nft.Infrastructure.Persistence.Migrations
                     b.ToTable("DiscordWalletConnections", (string)null);
                 });
 
+            modelBuilder.Entity("Forgotten.Nft.Domain.Entities.GuildRoleMapping", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("INTEGER");
+
+                    b.Property<string>("Blockchain")
+                        .IsRequired()
+                        .HasMaxLength(32)
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("CollectionAddress")
+                        .IsRequired()
+                        .HasMaxLength(64)
+                        .HasColumnType("TEXT");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("CreatedByDiscordUserId")
+                        .IsRequired()
+                        .HasMaxLength(20)
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("GuildId")
+                        .IsRequired()
+                        .HasMaxLength(20)
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("RoleId")
+                        .IsRequired()
+                        .HasMaxLength(20)
+                        .HasColumnType("TEXT");
+
+                    b.Property<DateTime>("UpdatedAt")
+                        .HasColumnType("TEXT");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("GuildId", "Blockchain", "CollectionAddress")
+                        .IsUnique();
+
+                    b.ToTable("GuildRoleMappings", (string)null);
+                });
+
             modelBuilder.Entity("Forgotten.Nft.Domain.Entities.NftAsset", b =>
                 {
                     b.Property<int>("Id")
@@ -270,6 +315,42 @@ namespace Forgotten.Nft.Infrastructure.Persistence.Migrations
                     b.ToTable("NftGallerySessions", (string)null);
                 });
 
+            modelBuilder.Entity("Forgotten.Nft.Domain.Entities.NftOwnershipHistory", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("INTEGER");
+
+                    b.Property<string>("NewOwnerAddress")
+                        .HasMaxLength(64)
+                        .HasColumnType("TEXT");
+
+                    b.Property<int>("NftAssetId")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<DateTime>("ObservedAt")
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("PreviousOwnerAddress")
+                        .HasMaxLength(64)
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("Source")
+                        .IsRequired()
+                        .HasMaxLength(32)
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("TransactionSignature")
+                        .HasMaxLength(128)
+                        .HasColumnType("TEXT");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("NftAssetId");
+
+                    b.ToTable("NftOwnershipHistory", (string)null);
+                });
+
             modelBuilder.Entity("Forgotten.Nft.Domain.Entities.NftVerificationLog", b =>
                 {
                     b.Property<int>("Id")
@@ -375,6 +456,17 @@ namespace Forgotten.Nft.Infrastructure.Persistence.Migrations
                 {
                     b.HasOne("Forgotten.Nft.Domain.Entities.NftAsset", "NftAsset")
                         .WithMany("Attributes")
+                        .HasForeignKey("NftAssetId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("NftAsset");
+                });
+
+            modelBuilder.Entity("Forgotten.Nft.Domain.Entities.NftOwnershipHistory", b =>
+                {
+                    b.HasOne("Forgotten.Nft.Domain.Entities.NftAsset", "NftAsset")
+                        .WithMany()
                         .HasForeignKey("NftAssetId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();

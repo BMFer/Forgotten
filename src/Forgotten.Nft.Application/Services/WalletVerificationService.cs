@@ -5,6 +5,7 @@ using Forgotten.Nft.Application.Configuration;
 using Forgotten.Nft.Application.DTOs;
 using Forgotten.Nft.Domain.Entities;
 using Forgotten.Nft.Domain.Enums;
+using Forgotten.Nft.Domain.Events;
 using Forgotten.Nft.Domain.ValueObjects;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
@@ -24,6 +25,7 @@ public sealed class WalletVerificationService : IWalletVerificationService
     private readonly IWalletChallengeRepository _challenges;
     private readonly IDiscordWalletConnectionRepository _connections;
     private readonly ISignatureVerifier _signatureVerifier;
+    private readonly IDomainEventPublisher _events;
     private readonly WalletVerificationOptions _options;
     private readonly ILogger<WalletVerificationService> _logger;
 
@@ -31,12 +33,14 @@ public sealed class WalletVerificationService : IWalletVerificationService
         IWalletChallengeRepository challenges,
         IDiscordWalletConnectionRepository connections,
         ISignatureVerifier signatureVerifier,
+        IDomainEventPublisher events,
         IOptions<WalletVerificationOptions> options,
         ILogger<WalletVerificationService> logger)
     {
         _challenges = challenges;
         _connections = connections;
         _signatureVerifier = signatureVerifier;
+        _events = events;
         _options = options.Value;
         _logger = logger;
     }
@@ -202,6 +206,10 @@ public sealed class WalletVerificationService : IWalletVerificationService
         challenge.Status = WalletVerificationStatus.Verified;
         challenge.ConsumedAt = now;
         await _challenges.UpdateAsync(challenge, cancellationToken).ConfigureAwait(false);
+
+        await _events.PublishAsync(
+            new WalletConnectedEvent(challenge.DiscordUserId, address.Value, DateTimeOffset.UtcNow),
+            cancellationToken).ConfigureAwait(false);
 
         _logger.LogInformation("Wallet verified for Discord user {UserId}.", challenge.DiscordUserId);
         return WalletVerificationOutcome.Ok(address.Value);

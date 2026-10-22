@@ -35,6 +35,15 @@ public sealed class DiscordWalletConnectionRepository : IDiscordWalletConnection
         _dbContext.DiscordWalletConnections
             .CountAsync(c => c.DiscordUserId == discordUserId && c.DisconnectedAt == null, cancellationToken);
 
+    public async Task<IReadOnlyList<ulong>> ListActiveUserIdsAsync(int max, CancellationToken cancellationToken) =>
+        await _dbContext.DiscordWalletConnections
+            .Where(c => c.DisconnectedAt == null)
+            .Select(c => c.DiscordUserId)
+            .Distinct()
+            .Take(Math.Clamp(max, 1, 1000))
+            .ToListAsync(cancellationToken)
+            .ConfigureAwait(false);
+
     public async Task UpsertAsync(DiscordWalletConnection connection, CancellationToken cancellationToken)
     {
         if (connection.Id == 0)

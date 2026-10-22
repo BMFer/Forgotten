@@ -1,5 +1,6 @@
 using Forgotten.Nft.Application.Abstractions;
 using Forgotten.Nft.Domain.Entities;
+using Forgotten.Nft.Domain.Events;
 using Forgotten.Nft.Domain.ValueObjects;
 
 namespace Forgotten.Nft.Application.Services;
@@ -10,8 +11,13 @@ public sealed class WalletConnectionService : IWalletConnectionService
     private const string Blockchain = "solana";
 
     private readonly IDiscordWalletConnectionRepository _connections;
+    private readonly IDomainEventPublisher _events;
 
-    public WalletConnectionService(IDiscordWalletConnectionRepository connections) => _connections = connections;
+    public WalletConnectionService(IDiscordWalletConnectionRepository connections, IDomainEventPublisher events)
+    {
+        _connections = connections;
+        _events = events;
+    }
 
     public Task<IReadOnlyList<DiscordWalletConnection>> ListAsync(ulong discordUserId, CancellationToken cancellationToken) =>
         _connections.ListActiveByUserAsync(discordUserId, cancellationToken);
@@ -37,6 +43,10 @@ public sealed class WalletConnectionService : IWalletConnectionService
         connection.IsPrimary = false;
         connection.UpdatedAt = now;
         await _connections.UpsertAsync(connection, cancellationToken).ConfigureAwait(false);
+
+        await _events.PublishAsync(
+            new WalletDisconnectedEvent(discordUserId, address.Value, DateTimeOffset.UtcNow),
+            cancellationToken).ConfigureAwait(false);
         return true;
     }
 

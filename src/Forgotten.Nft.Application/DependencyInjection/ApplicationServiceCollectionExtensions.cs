@@ -44,6 +44,9 @@ public static class ApplicationServiceCollectionExtensions
         services.AddScoped<IWalletVerificationService, WalletVerificationService>();
         services.AddScoped<IWalletConnectionService, WalletConnectionService>();
         services.AddScoped<INftGalleryService, NftGalleryService>();
+        services.AddScoped<IDomainEventPublisher, DomainEventPublisher>();
+        services.AddScoped<IOwnershipMonitor, OwnershipMonitor>();
+        services.AddScoped<IRoleReconciliationService, RoleReconciliationService>();
 
         return services;
     }

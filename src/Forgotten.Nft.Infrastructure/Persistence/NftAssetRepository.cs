@@ -67,4 +67,40 @@ public sealed class NftAssetRepository : INftAssetRepository
 
         await _dbContext.SaveChangesAsync(cancellationToken).ConfigureAwait(false);
     }
+
+    public async Task<IReadOnlyList<NftAsset>> ListByCollectionsAsync(
+        string blockchain, IReadOnlyCollection<string> collectionAddresses, int max, CancellationToken cancellationToken)
+    {
+        if (collectionAddresses.Count == 0)
+        {
+            return Array.Empty<NftAsset>();
+        }
+
+        var collections = collectionAddresses.ToList();
+
+        // Stalest snapshots first so each sweep makes progress across the set.
+        return await _dbContext.NftAssets
+            .Where(a => a.Blockchain == blockchain
+                && !a.IsBurned
+                && a.CollectionAddress != null
+                && collections.Contains(a.CollectionAddress))
+            .OrderBy(a => a.LastFetchedAt)
+            .Take(Math.Clamp(max, 1, 500))
+            .ToListAsync(cancellationToken)
+            .ConfigureAwait(false);
+    }
+
+    public async Task UpdateOwnerAsync(int nftAssetId, string? newOwnerAddress, DateTime observedAt, CancellationToken cancellationToken)
+    {
+        var asset = await _dbContext.NftAssets.FindAsync(new object[] { nftAssetId }, cancellationToken).ConfigureAwait(false);
+        if (asset is null)
+        {
+            return;
+        }
+
+        asset.OwnerAddress = newOwnerAddress;
+        asset.LastFetchedAt = observedAt;
+        asset.UpdatedAt = observedAt;
+        await _dbContext.SaveChangesAsync(cancellationToken).ConfigureAwait(false);
+    }
 }
