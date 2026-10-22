@@ -5,10 +5,11 @@ on Discord.Net. FORGOTTEN lets Discord members inspect Solana NFTs, cryptographi
 prove wallet ownership, browse their collections, and expose verified ownership to
 external games — without hardcoding any single NFT collection.
 
-> **Status:** Phases 0–4 complete and running. NFT inspection/verification, the
-> `/nft-admin` registry, **cryptographic wallet verification** (`/wallet`), and an
-> **interactive NFT gallery** (`/nft gallery`) all work. Phase 5 (ownership
-> monitoring + Discord role sync) is next — see the [Roadmap](#roadmap).
+> **Status:** Phases 0–5 complete and running. NFT inspection/verification, the
+> `/nft-admin` registry, **cryptographic wallet verification** (`/wallet`), an
+> **interactive NFT gallery** (`/nft gallery`), and **background ownership
+> monitoring with NFT-gated Discord roles** all work. Phase 6 (external game / POW
+> integration) is the last — see the [Roadmap](#roadmap).
 
 The engine is **collection-agnostic**: it validates and displays NFTs from any
 compatible Solana collection, while game-specific logic (e.g. Dead Mint Carnival /
@@ -131,6 +132,10 @@ Administrator commands (guild administrators only; responses are ephemeral):
 | `/nft-admin collection-add <address> [name]` | Approve a collection for this server |
 | `/nft-admin collection-remove <address>` | Remove a collection's approval |
 | `/nft-admin collection-list` | List approved collections |
+| `/nft-admin role-map <collection> <role>` | Grant a role to holders of an approved collection |
+| `/nft-admin role-unmap <collection>` | Stop granting a role for a collection |
+| `/nft-admin role-list` | List collection→role mappings |
+| `/nft-admin role-sync` | Reconcile NFT-gated roles against current ownership now |
 | `/nft-admin provider-status` | Show Solana provider configuration status |
 | `/nft-admin cache-clear` | Clear cached inspection data |
 | `/nft-admin verification-log` | Recent verification activity |
@@ -156,6 +161,23 @@ dotnet run --project src/Forgotten.Nft.WalletWeb
 
 Keys and seed phrases are never requested, transmitted, or stored.
 
+## Ownership monitoring & roles
+
+A background worker (enabled by `NftEngine:EnableOwnershipMonitoring`, every
+`OwnershipPollingMinutes`) re-checks ownership of tracked NFTs in approved
+collections. Observed owner changes are recorded to history — **without fabricating
+a transfer transaction** (spec §10.2) — raised as domain events, and the inspect
+cache is invalidated.
+
+Admins map an approved collection to a role with `/nft-admin role-map`; the worker
+(and `/nft-admin role-sync`) then grants the role to members who hold a qualifying
+NFT and removes it from those who no longer do. Safeguards (spec §11): a provider
+outage **never** strips roles; privileged roles (Administrator / Manage Roles /
+Manage Guild) and roles above the bot are refused.
+
+> For live role changes the bot needs the **Manage Roles** permission and its role
+> positioned **above** the managed role in the server's role list.
+
 ## Configuration overview
 
 | Section | Purpose | Notes |
@@ -179,7 +201,8 @@ auto-dropped or recreated. Pending migrations are applied automatically when the
 bot starts (additive `Database.Migrate()`), so the schema stays in sync with the
 code with no manual step. Tables so far: `NftAssets`, `NftAttributes` (Phase 1),
 `NftCollections`, `NftVerificationLogs` (Phase 2), `WalletVerificationChallenges`,
-`DiscordWalletConnections` (Phase 3), `NftGallerySessions` (Phase 4).
+`DiscordWalletConnections` (Phase 3), `NftGallerySessions` (Phase 4),
+`NftOwnershipHistory`, `GuildRoleMappings` (Phase 5).
 
 To add or inspect migrations during development:
 
@@ -201,8 +224,8 @@ Each phase is a self-contained, tested vertical slice. Full guides live in
 | **2 — Verification** | `/nft verify` + collection approval registry | ✅ Complete |
 | **3 — Wallet** | Cryptographic Ed25519 wallet ownership proof | ✅ Complete |
 | **4 — Gallery** | Interactive, paginated `/nft gallery` | ✅ Complete |
-| **5 — Monitoring** | Background ownership tracking + role sync | ⬜ Next |
-| **6 — Game integration** | Ownership/eligibility interfaces for POW | ⬜ Planned |
+| **5 — Monitoring** | Background ownership tracking + role sync | ✅ Complete |
+| **6 — Game integration** | Ownership/eligibility interfaces for POW | ⬜ Next |
 
 ## Security principles
 
