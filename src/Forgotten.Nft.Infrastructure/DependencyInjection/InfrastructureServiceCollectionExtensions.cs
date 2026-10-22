@@ -56,12 +56,16 @@ public static class InfrastructureServiceCollectionExtensions
         services.AddSingleton<ISolanaAssetProvider, DasSolanaAssetProvider>();
         services.AddSingleton<IMetadataResolver, MetadataResolver>();
         services.AddSingleton<ISignatureVerifier, Ed25519SignatureVerifier>();
+        // Default no-op role service; the Bot overrides this with a Discord-backed one.
+        services.AddSingleton<IDiscordRoleService, NullDiscordRoleService>();
         services.AddScoped<INftAssetRepository, NftAssetRepository>();
         services.AddScoped<INftCollectionRepository, NftCollectionRepository>();
         services.AddScoped<INftVerificationLogRepository, NftVerificationLogRepository>();
         services.AddScoped<IWalletChallengeRepository, WalletChallengeRepository>();
         services.AddScoped<IDiscordWalletConnectionRepository, DiscordWalletConnectionRepository>();
         services.AddScoped<INftGallerySessionRepository, NftGallerySessionRepository>();
+        services.AddScoped<INftOwnershipHistoryRepository, NftOwnershipHistoryRepository>();
+        services.AddScoped<IGuildRoleMappingRepository, GuildRoleMappingRepository>();
 
         return services;
     }

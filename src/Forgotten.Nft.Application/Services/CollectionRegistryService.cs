@@ -1,5 +1,6 @@
 using Forgotten.Nft.Application.Abstractions;
 using Forgotten.Nft.Domain.Entities;
+using Forgotten.Nft.Domain.Events;
 using Forgotten.Nft.Domain.ValueObjects;
 
 namespace Forgotten.Nft.Application.Services;
@@ -14,8 +15,13 @@ public sealed class CollectionRegistryService : ICollectionRegistryService
     private const string Blockchain = "solana";
 
     private readonly INftCollectionRepository _repository;
+    private readonly IDomainEventPublisher _events;
 
-    public CollectionRegistryService(INftCollectionRepository repository) => _repository = repository;
+    public CollectionRegistryService(INftCollectionRepository repository, IDomainEventPublisher events)
+    {
+        _repository = repository;
+        _events = events;
+    }
 
     public async Task<NftCollection> ApproveAsync(
         ulong guildId, string collectionAddress, string? displayName, ulong approvedByUserId, CancellationToken cancellationToken)
@@ -42,6 +48,10 @@ public sealed class CollectionRegistryService : ICollectionRegistryService
         }
 
         await _repository.UpsertAsync(entity, cancellationToken).ConfigureAwait(false);
+
+        await _events.PublishAsync(
+            new NftCollectionApprovedEvent(guildId, address, DateTimeOffset.UtcNow),
+            cancellationToken).ConfigureAwait(false);
         return entity;
     }
 

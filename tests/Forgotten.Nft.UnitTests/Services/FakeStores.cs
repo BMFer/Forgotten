@@ -2,8 +2,15 @@ using Forgotten.Nft.Application.Abstractions;
 using Forgotten.Nft.Application.Common;
 using Forgotten.Nft.Application.Models;
 using Forgotten.Nft.Domain.Entities;
+using Forgotten.Nft.Domain.Events;
 
 namespace Forgotten.Nft.UnitTests.Services;
+
+/// <summary>No-op event publisher for services that now take one.</summary>
+internal sealed class NullDomainEventPublisher : IDomainEventPublisher
+{
+    public Task PublishAsync(IDomainEvent domainEvent, CancellationToken cancellationToken) => Task.CompletedTask;
+}
 
 /// <summary>In-memory test doubles shared by the Phase 2 service tests.</summary>
 internal sealed class FakeAssetProvider : ISolanaAssetProvider
@@ -84,6 +91,10 @@ internal sealed class FakeCollectionRepository : INftCollectionRepository
         _items.Remove(existing);
         return Task.FromResult(true);
     }
+
+    public Task<IReadOnlyList<string>> ListApprovedCollectionAddressesAsync(string blockchain, CancellationToken cancellationToken) =>
+        Task.FromResult<IReadOnlyList<string>>(
+            _items.Where(c => c.Blockchain == blockchain && c.IsApproved).Select(c => c.CollectionAddress).Distinct().ToList());
 }
 
 internal sealed class FakeVerificationLogRepository : INftVerificationLogRepository

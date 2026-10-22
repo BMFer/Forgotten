@@ -201,6 +201,9 @@ public class NftGalleryServiceTests
         public Task<int> CountActiveByUserAsync(ulong discordUserId, CancellationToken cancellationToken) =>
             Task.FromResult(_active.Count);
 
+        public Task<IReadOnlyList<ulong>> ListActiveUserIdsAsync(int max, CancellationToken cancellationToken) =>
+            Task.FromResult<IReadOnlyList<ulong>>(_active.Select(c => c.DiscordUserId).Distinct().Take(max).ToList());
+
         public Task UpsertAsync(DiscordWalletConnection connection, CancellationToken cancellationToken) => Task.CompletedTask;
     }
 

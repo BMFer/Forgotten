@@ -30,7 +30,7 @@ public class NftVerificationServiceTests
         SolanaAsset? asset, bool providerThrows = false)
     {
         var repo = new FakeCollectionRepository();
-        var registry = new CollectionRegistryService(repo);
+        var registry = new CollectionRegistryService(repo, new NullDomainEventPublisher());
         var log = new FakeVerificationLogRepository();
         var svc = new NftVerificationService(
             new FakeAssetProvider(asset, providerThrows),
@@ -70,7 +70,7 @@ public class NftVerificationServiceTests
     public async Task Approved_NotOnChainVerified_AreIndependent()
     {
         var (svc, _, repo) = Build(Nft(collectionVerified: false));
-        await new CollectionRegistryService(repo).ApproveAsync(Guild, Collection, "DMC", 7UL, default);
+        await new CollectionRegistryService(repo, new NullDomainEventPublisher()).ApproveAsync(Guild, Collection, "DMC", 7UL, default);
 
         var r = await svc.VerifyAsync(Guild, Asset);
 
@@ -84,7 +84,7 @@ public class NftVerificationServiceTests
     public async Task Approval_IsGuildScoped()
     {
         var (svc, _, repo) = Build(Nft(collectionVerified: false));
-        await new CollectionRegistryService(repo).ApproveAsync(Guild, Collection, "DMC", 7UL, default);
+        await new CollectionRegistryService(repo, new NullDomainEventPublisher()).ApproveAsync(Guild, Collection, "DMC", 7UL, default);
 
         var otherGuild = await svc.VerifyAsync(guildId: 999UL, Asset);
 

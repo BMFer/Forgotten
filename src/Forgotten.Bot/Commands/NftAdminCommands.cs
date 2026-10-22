@@ -3,6 +3,8 @@ using Discord.Interactions;
 using Forgotten.Bot.Embeds;
 using Forgotten.Nft.Application.Abstractions;
 using Forgotten.Nft.Application.Configuration;
+using Forgotten.Nft.Domain.Entities;
+using Forgotten.Nft.Domain.ValueObjects;
 using Microsoft.Extensions.Caching.Memory;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
@@ -24,6 +26,8 @@ public sealed class NftAdminCommands : InteractionModuleBase<SocketInteractionCo
 {
     private readonly ICollectionRegistryService _registry;
     private readonly INftVerificationLogRepository _auditLog;
+    private readonly IGuildRoleMappingRepository _roleMappings;
+    private readonly IRoleReconciliationService _reconciliation;
     private readonly ISolanaAssetProvider _assetProvider;
     private readonly IMemoryCache _cache;
     private readonly NftEmbedFactory _embeds;
@@ -33,6 +37,8 @@ public sealed class NftAdminCommands : InteractionModuleBase<SocketInteractionCo
     public NftAdminCommands(
         ICollectionRegistryService registry,
         INftVerificationLogRepository auditLog,
+        IGuildRoleMappingRepository roleMappings,
+        IRoleReconciliationService reconciliation,
         ISolanaAssetProvider assetProvider,
         IMemoryCache cache,
         NftEmbedFactory embeds,
@@ -41,11 +47,90 @@ public sealed class NftAdminCommands : InteractionModuleBase<SocketInteractionCo
     {
         _registry = registry;
         _auditLog = auditLog;
+        _roleMappings = roleMappings;
+        _reconciliation = reconciliation;
         _assetProvider = assetProvider;
         _cache = cache;
         _embeds = embeds;
         _solanaOptions = solanaOptions.Value;
         _logger = logger;
+    }
+
+    [SlashCommand("role-map", "Grant a Discord role to holders of an approved collection.")]
+    public async Task RoleMapAsync(
+        [Summary("collection", "The collection address")] string collection,
+        [Summary("role", "The role to grant holders")] IRole role)
+    {
+        await DeferAsync(ephemeral: true).ConfigureAwait(false);
+
+        if (!SolanaAddress.TryParse(collection, out var address))
+        {
+            await FollowupAsync("That is not a valid Solana collection address.", ephemeral: true).ConfigureAwait(false);
+            return;
+        }
+
+        if (!await _registry.IsApprovedAsync(Context.Guild.Id, address.Value, CancellationToken.None).ConfigureAwait(false))
+        {
+            await FollowupAsync("Approve the collection first with `/nft-admin collection-add`.", ephemeral: true).ConfigureAwait(false);
+            return;
+        }
+
+        if (role.Permissions.Administrator || role.Permissions.ManageRoles || role.Permissions.ManageGuild)
+        {
+            await FollowupAsync("For safety, privileged roles (Administrator/Manage Roles/Manage Guild) can't be auto-assigned.", ephemeral: true).ConfigureAwait(false);
+            return;
+        }
+
+        var now = DateTime.UtcNow;
+        var existing = await _roleMappings.GetAsync(Context.Guild.Id, "solana", address.Value, CancellationToken.None).ConfigureAwait(false);
+        var mapping = existing ?? new GuildRoleMapping
+        {
+            GuildId = Context.Guild.Id,
+            Blockchain = "solana",
+            CollectionAddress = address.Value,
+            CreatedByDiscordUserId = Context.User.Id,
+            CreatedAt = now,
+        };
+        mapping.RoleId = role.Id;
+        mapping.UpdatedAt = now;
+        await _roleMappings.UpsertAsync(mapping, CancellationToken.None).ConfigureAwait(false);
+
+        await FollowupAsync($"✅ Holders of `{collection}` will receive {role.Mention}. Run `/nft-admin role-sync` to apply now.", ephemeral: true).ConfigureAwait(false);
+    }
+
+    [SlashCommand("role-unmap", "Stop granting a role for a collection.")]
+    public async Task RoleUnmapAsync([Summary("collection", "The collection address")] string collection)
+    {
+        await DeferAsync(ephemeral: true).ConfigureAwait(false);
+        if (!SolanaAddress.TryParse(collection, out var address))
+        {
+            await FollowupAsync("That is not a valid Solana collection address.", ephemeral: true).ConfigureAwait(false);
+            return;
+        }
+
+        var removed = await _roleMappings.RemoveAsync(Context.Guild.Id, "solana", address.Value, CancellationToken.None).ConfigureAwait(false);
+        await FollowupAsync(removed ? $"🗑️ Removed role mapping for `{collection}`." : "No role mapping found for that collection.", ephemeral: true).ConfigureAwait(false);
+    }
+
+    [SlashCommand("role-list", "List collection→role mappings for this server.")]
+    public async Task RoleListAsync()
+    {
+        await DeferAsync(ephemeral: true).ConfigureAwait(false);
+        var mappings = await _roleMappings.ListByGuildAsync(Context.Guild.Id, CancellationToken.None).ConfigureAwait(false);
+
+        var embed = new EmbedBuilder().WithTitle("Collection → Role mappings").WithColor(new Color(0x95A5A6));
+        embed.WithDescription(mappings.Count == 0
+            ? "No role mappings. Add one with `/nft-admin role-map`."
+            : string.Join("\n", mappings.Select(m => $"• `{m.CollectionAddress[..4]}…{m.CollectionAddress[^4..]}` → <@&{m.RoleId}>")));
+        await FollowupAsync(embed: embed.Build(), ephemeral: true, allowedMentions: AllowedMentions.None).ConfigureAwait(false);
+    }
+
+    [SlashCommand("role-sync", "Reconcile NFT-based roles against current ownership now.")]
+    public async Task RoleSyncAsync()
+    {
+        await DeferAsync(ephemeral: true).ConfigureAwait(false);
+        var changes = await _reconciliation.ReconcileAllAsync(CancellationToken.None).ConfigureAwait(false);
+        await FollowupAsync($"🔁 Role reconciliation complete — {changes} change(s) applied.", ephemeral: true).ConfigureAwait(false);
     }
 
     [SlashCommand("collection-add", "Approve a collection for this server.")]

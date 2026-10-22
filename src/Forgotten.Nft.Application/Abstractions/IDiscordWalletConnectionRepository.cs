@@ -14,5 +14,8 @@ public interface IDiscordWalletConnectionRepository
 
     Task<int> CountActiveByUserAsync(ulong discordUserId, CancellationToken cancellationToken);
 
+    /// <summary>Distinct Discord user ids that have at least one active wallet, bounded (for role reconciliation).</summary>
+    Task<IReadOnlyList<ulong>> ListActiveUserIdsAsync(int max, CancellationToken cancellationToken);
+
     Task UpsertAsync(DiscordWalletConnection connection, CancellationToken cancellationToken);
 }

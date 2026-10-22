@@ -4,6 +4,8 @@ using Discord.WebSocket;
 using Forgotten.Bot.Configuration;
 using Forgotten.Bot.Embeds;
 using Forgotten.Bot.Services;
+using Forgotten.Bot.Workers;
+using Forgotten.Nft.Application.Abstractions;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 
@@ -31,6 +33,7 @@ public static class BotServiceCollectionExtensions
 
         services.AddSingleton<CommandRateLimiter>();
         services.AddSingleton<NftEmbedFactory>();
+        services.AddSingleton<IDiscordRoleService, DiscordRoleService>();
 
         services.AddSingleton(new DiscordSocketConfig
         {
@@ -53,6 +56,7 @@ public static class BotServiceCollectionExtensions
             }));
 
         services.AddHostedService<DiscordBotService>();
+        services.AddHostedService<OwnershipMonitoringWorker>();
 
         return services;
     }

@@ -34,6 +34,10 @@ public class ForgottenDbContext : DbContext
 
     public DbSet<NftGallerySession> NftGallerySessions => Set<NftGallerySession>();
 
+    public DbSet<NftOwnershipHistory> NftOwnershipHistory => Set<NftOwnershipHistory>();
+
+    public DbSet<GuildRoleMapping> GuildRoleMappings => Set<GuildRoleMapping>();
+
     protected override void ConfigureConventions(ModelConfigurationBuilder configurationBuilder)
     {
         base.ConfigureConventions(configurationBuilder);

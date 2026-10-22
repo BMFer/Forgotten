@@ -33,7 +33,8 @@ public class WalletVerificationServiceTests
             OneWalletPerIdentity = oneWalletPerIdentity,
         });
 
-        var svc = new WalletVerificationService(ch, conn, new Ed25519SignatureVerifier(), options, NullLogger<WalletVerificationService>.Instance);
+        var svc = new WalletVerificationService(
+            ch, conn, new Ed25519SignatureVerifier(), new NullDomainEventPublisher(), options, NullLogger<WalletVerificationService>.Instance);
         return (svc, ch, conn);
     }
 

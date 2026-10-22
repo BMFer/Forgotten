@@ -236,5 +236,12 @@ public class NftInspectionServiceTests
             Task.FromResult<NftAsset?>(null);
 
         public Task UpsertAsync(NftAsset asset, CancellationToken cancellationToken) => Task.CompletedTask;
+
+        public Task<IReadOnlyList<NftAsset>> ListByCollectionsAsync(
+            string blockchain, IReadOnlyCollection<string> collectionAddresses, int max, CancellationToken cancellationToken) =>
+            Task.FromResult<IReadOnlyList<NftAsset>>(Array.Empty<NftAsset>());
+
+        public Task UpdateOwnerAsync(int nftAssetId, string? newOwnerAddress, DateTime observedAt, CancellationToken cancellationToken) =>
+            Task.CompletedTask;
     }
 }

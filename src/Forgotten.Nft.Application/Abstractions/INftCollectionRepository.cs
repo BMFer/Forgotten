@@ -12,4 +12,7 @@ public interface INftCollectionRepository
     Task UpsertAsync(NftCollection collection, CancellationToken cancellationToken);
 
     Task<bool> RemoveAsync(ulong guildId, string blockchain, string collectionAddress, CancellationToken cancellationToken);
+
+    /// <summary>Distinct approved collection addresses across all guilds (for the ownership monitor).</summary>
+    Task<IReadOnlyList<string>> ListApprovedCollectionAddressesAsync(string blockchain, CancellationToken cancellationToken);
 }

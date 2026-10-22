@@ -6,7 +6,7 @@ public class CollectionRegistryServiceTests
 {
     private const string Collection = "So11111111111111111111111111111111111111112";
 
-    private static CollectionRegistryService Create() => new(new FakeCollectionRepository());
+    private static CollectionRegistryService Create() => new(new FakeCollectionRepository(), new NullDomainEventPublisher());
 
     [Fact]
     public async Task Approve_ThenIsApproved_True()

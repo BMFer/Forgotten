@@ -1,11 +1,18 @@
 using System.Text;
 using Forgotten.Nft.Application.Abstractions;
 using Forgotten.Nft.Domain.Entities;
+using Forgotten.Nft.Domain.Events;
 using Forgotten.Nft.Domain.ValueObjects;
 using Org.BouncyCastle.Math.EC.Rfc8032;
 using Org.BouncyCastle.Security;
 
 namespace Forgotten.Nft.SecurityTests.Wallet;
+
+/// <summary>No-op event publisher for the wallet verification tests.</summary>
+internal sealed class NullDomainEventPublisher : IDomainEventPublisher
+{
+    public Task PublishAsync(IDomainEvent domainEvent, CancellationToken cancellationToken) => Task.CompletedTask;
+}
 
 /// <summary>A generated Ed25519 keypair plus its Base58 Solana address, for signing in tests.</summary>
 internal sealed class TestKeypair
@@ -78,6 +85,10 @@ internal sealed class FakeConnectionRepository : IDiscordWalletConnectionReposit
 
     public Task<int> CountActiveByUserAsync(ulong discordUserId, CancellationToken cancellationToken) =>
         Task.FromResult(Items.Count(c => c.DiscordUserId == discordUserId && c.DisconnectedAt == null));
+
+    public Task<IReadOnlyList<ulong>> ListActiveUserIdsAsync(int max, CancellationToken cancellationToken) =>
+        Task.FromResult<IReadOnlyList<ulong>>(
+            Items.Where(c => c.DisconnectedAt == null).Select(c => c.DiscordUserId).Distinct().Take(max).ToList());
 
     public Task UpsertAsync(DiscordWalletConnection connection, CancellationToken cancellationToken)
     {

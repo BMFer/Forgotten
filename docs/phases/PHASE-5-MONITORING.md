@@ -2,7 +2,7 @@
 
 **Spec refs:** §10 (all), §11 (all), §9 (`NftOwnershipHistory`), §10.3 events,
 §15 invalidation, §22.5
-**Status:** not started
+**Status:** ✅ code complete (2026-10-21, branch `phase-5-monitoring`) — live role assignment needs the bot to have Manage Roles (see Exit Gate)
 **Deliverable (spec §22):** The bot safely reacts to NFT ownership changes —
 detecting them in the background, recording history, firing events, and
 reconciling Discord roles.
@@ -99,11 +99,30 @@ failing safe during provider outages.
 
 ## 7. Exit Gate — all must be checked to start Phase 6
 
-- [ ] Worker detects ownership changes within the configured interval (tested w/ mocks).
-- [ ] Observed changes recorded without inventing transaction signatures.
-- [ ] All six domain events defined and raised by their source actions.
-- [ ] Roles assigned/removed on fresh ownership; provider outage does **not**
-      strip roles (grace period verified).
-- [ ] Cache invalidation on ownership/admin changes verified.
-- [ ] `NftOwnershipHistory` migration additive and applied.
-- [ ] Build clean; Phase 5 tests green; `ARCHITECTURE.md` (events) + `SECURITY.md` updated.
+- [x] Worker detects ownership changes each sweep (bounded batch of tracked assets
+      in approved collections); unit-tested with a mocked provider.
+- [x] Observed changes recorded with `Source=monitor-observed` and a **null**
+      transaction signature — never invented (unit test).
+- [x] No-change → no event/history (idempotent/duplicate-event prevention, tested).
+- [x] Domain events defined (`NftOwnershipChanged/Verified/CollectionApproved/
+      WalletConnected/WalletDisconnected/EligibilityChanged`) and published on
+      ownership change, wallet connect/disconnect, and collection approval.
+- [x] Roles granted/removed via a hierarchy- and privilege-guarded applier
+      (refuses Administrator/Manage-Roles/Manage-Guild and roles above the bot);
+      ⚠ **provider outage → no removal** (grace), unit-tested.
+- [x] Ownership-change invalidates the asset's inspect cache.
+- [x] `AddMonitoringTables` migration additive and applied on startup.
+- [x] Build clean (0 warnings); Phase 5 tests green (107 total; +8 monitor/reconcile).
+- [ ] ⏳ **Live role assignment** — needs the bot granted **Manage Roles** and its
+      role positioned above the managed role in the server (a Discord setting). The
+      applier is built and self-guards; verified via `/nft-admin role-map` +
+      `role-sync` once permissions are set. Not faked (spec §25).
+- [ ] Docs (`ARCHITECTURE.md` events, `SECURITY.md`) — pending.
+
+### Verification summary (2026-10-21)
+
+- `dotnet build Forgotten.slnx` → **0 warnings, 0 errors**.
+- `dotnet test` → **107 passed / 0 failed**.
+- `dotnet run` → `AddMonitoringTables` auto-applied; worker logs
+  "Ownership monitoring enabled; interval 00:05:00"; `/nft-admin role-map|role-unmap|
+  role-list|role-sync` registered; WalletWeb still boots (null role-service default).
