@@ -1,0 +1,7 @@
+# Copy to terraform.tfvars and fill in. terraform.tfvars is gitignored (no secrets in git).
+region           = "us-east-1"
+instance_type    = "t3.micro"           # free-tier for 12 months; "t4g.micro" is cheaper long-term (ARM — publish linux-arm64)
+key_name         = "forgotten-key"       # name of an EXISTING EC2 key pair you created in this region
+ssh_allowed_cidr = "203.0.113.4/32"      # YOUR public IP only (https://checkip.amazonaws.com), never 0.0.0.0/0
+domain           = "verify.forgottennft.com"
+acme_email       = "you@forgottennft.com"

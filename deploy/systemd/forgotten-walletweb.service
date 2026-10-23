@@ -1,0 +1,28 @@
+[Unit]
+Description=FORGOTTEN wallet-verification web app
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+User=forgotten
+Group=forgotten
+WorkingDirectory=/opt/forgotten/walletweb
+ExecStart=/opt/forgotten/walletweb/Forgotten.Nft.WalletWeb
+EnvironmentFile=/etc/forgotten/forgotten.env
+Environment=ASPNETCORE_ENVIRONMENT=Production
+Environment=ASPNETCORE_URLS=http://127.0.0.1:5080
+Restart=on-failure
+RestartSec=5
+
+# Hardening — only Caddy on localhost reaches this; never exposed directly.
+NoNewPrivileges=true
+ProtectSystem=strict
+ProtectHome=true
+PrivateTmp=true
+ReadWritePaths=/var/lib/forgotten
+CapabilityBoundingSet=
+AmbientCapabilities=
+
+[Install]
+WantedBy=multi-user.target
