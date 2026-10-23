@@ -18,6 +18,13 @@ public sealed class WalletVerificationOptions
     /// <summary>Domain shown in the signed message; defaults to the host of <see cref="PublicBaseUrl"/>.</summary>
     public string? Domain { get; set; }
 
+    /// <summary>
+    /// TipLink Wallet Adapter client id (request from TipLink). When set, the
+    /// verification page offers "Connect with TipLink" (Google sign-in wallet).
+    /// Empty/null hides the TipLink option; injected wallets still work.
+    /// </summary>
+    public string? TipLinkClientId { get; set; }
+
     /// <summary>How long a verification session/challenge remains valid after creation.</summary>
     [Range(60, 86400)]
     public int SessionTtlSeconds { get; set; } = 900;

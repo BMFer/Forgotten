@@ -29,3 +29,16 @@ TestResults/
 coverage/
 *.coverage
 *.trx
+
+# Node (WalletWeb client bundle build). The built bundle under wwwroot/js IS committed.
+node_modules/
+
+# Deployment: secrets, Terraform state, publish artifacts (never commit these)
+deploy/forgotten.env
+deploy/terraform/terraform.tfvars
+deploy/terraform/.terraform/
+deploy/terraform/*.tfstate
+deploy/terraform/*.tfstate.*
+deploy/terraform/.terraform.lock.hcl
+artifacts/
+

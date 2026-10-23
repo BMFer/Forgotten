@@ -8,9 +8,11 @@
 // (spec §7.3); localhost may use HTTP for development.
 
 using Forgotten.Nft.Application.Abstractions;
+using Forgotten.Nft.Application.Configuration;
 using Forgotten.Nft.Application.DependencyInjection;
 using Forgotten.Nft.Infrastructure.DependencyInjection;
 using Forgotten.Nft.WalletWeb;
+using Microsoft.Extensions.Options;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -19,11 +21,14 @@ builder.Services.AddForgottenInfrastructure(builder.Configuration);
 
 var app = builder.Build();
 
+// Serves the bundled client at /js/verify.js (built from ClientApp into wwwroot).
+app.UseStaticFiles();
+
 app.MapGet("/health", () => Results.Ok(new { status = "ok", component = "wallet-web" }));
 
 // The signing page. The token is a one-time capability embedded in the URL.
-app.MapGet("/verify/{token}", (string token) =>
-    Results.Content(VerificationPage.Html(token), "text/html; charset=utf-8"));
+app.MapGet("/verify/{token}", (string token, IOptions<WalletVerificationOptions> options) =>
+    Results.Content(VerificationPage.Html(token, options.Value.TipLinkClientId), "text/html; charset=utf-8"));
 
 // Step 1: bind the connected wallet and return the exact message to sign.
 app.MapPost("/api/verify/{token}/challenge", async (
