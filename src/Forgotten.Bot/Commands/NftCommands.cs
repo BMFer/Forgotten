@@ -64,8 +64,20 @@ public sealed class NftCommands : InteractionModuleBase<SocketInteractionContext
         // Private by default so wallet holdings aren't exposed publicly (spec §12, §16.13).
         await DeferAsync(ephemeral: true).ConfigureAwait(false);
 
-        var view = await _gallery.CreateAsync(Context.User.Id, Context.Guild?.Id ?? 0UL, collection, CancellationToken.None)
-            .ConfigureAwait(false);
+        GalleryView view;
+        try
+        {
+            view = await _gallery.CreateAsync(Context.User.Id, Context.Guild?.Id ?? 0UL, collection, CancellationToken.None)
+                .ConfigureAwait(false);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogWarning(ex, "Gallery load failed for {User}.", Context.User.Id);
+            await ModifyOriginalResponseAsync(m =>
+                m.Content = "Couldn't load your gallery right now — the blockchain provider may be unavailable or not DAS-capable. Please try again shortly.")
+                .ConfigureAwait(false);
+            return;
+        }
 
         if (view.Status == GalleryViewStatus.NoWallet)
         {

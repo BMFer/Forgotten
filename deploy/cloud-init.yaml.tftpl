@@ -1,0 +1,52 @@
+#cloud-config
+# First-boot setup for the FORGOTTEN host: Caddy (auto HTTPS), a non-root service
+# user + dirs, and basic hardening. App binaries + secrets are delivered afterward
+# by deploy/publish-and-deploy.sh (never baked into the image).
+package_update: true
+package_upgrade: true
+
+packages:
+  - fail2ban
+  - unattended-upgrades
+  - debian-keyring
+  - debian-archive-keyring
+  - apt-transport-https
+  - curl
+  - gnupg
+
+write_files:
+  - path: /etc/caddy/Caddyfile
+    permissions: "0644"
+    content: |
+      ${domain} {
+          encode gzip
+          reverse_proxy 127.0.0.1:5080
+          header {
+              Strict-Transport-Security "max-age=31536000; includeSubDomains"
+              X-Content-Type-Options "nosniff"
+              X-Frame-Options "DENY"
+              Referrer-Policy "no-referrer"
+              -Server
+          }
+      }
+  - path: /etc/apt/apt.conf.d/20auto-upgrades
+    permissions: "0644"
+    content: |
+      APT::Periodic::Update-Package-Lists "1";
+      APT::Periodic::Unattended-Upgrade "1";
+
+runcmd:
+  # Non-root service account + application directories.
+  - id -u forgotten >/dev/null 2>&1 || useradd --system --home /opt/forgotten --shell /usr/sbin/nologin forgotten
+  - mkdir -p /opt/forgotten/bot /opt/forgotten/walletweb /var/lib/forgotten /etc/forgotten
+  - chown -R forgotten:forgotten /opt/forgotten /var/lib/forgotten /etc/forgotten
+  - chmod 750 /etc/forgotten
+  # Install Caddy from the official repo.
+  - curl -1sLf 'https://dl.cloudsmith.io/public/caddy/stable/gpg.key' | gpg --dearmor -o /usr/share/keyrings/caddy-stable-archive-keyring.gpg
+  - curl -1sLf 'https://dl.cloudsmith.io/public/caddy/stable/debian.deb.txt' | tee /etc/apt/sources.list.d/caddy-stable.list
+  - apt-get update
+  - apt-get install -y caddy
+  - sed -i 's/^email .*$/email ${acme_email}/' /etc/caddy/Caddyfile || true
+  - systemctl enable --now caddy
+  - systemctl enable --now fail2ban
+  - systemctl restart caddy

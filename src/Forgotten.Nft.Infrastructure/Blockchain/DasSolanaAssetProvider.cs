@@ -79,6 +79,7 @@ public sealed class DasSolanaAssetProvider : ISolanaAssetProvider
 
         if (payload?.Error is { } error)
         {
+            ThrowIfNotDasCapable(error);
             if (IsNotFound(error))
             {
                 return null;
@@ -128,6 +129,7 @@ public sealed class DasSolanaAssetProvider : ISolanaAssetProvider
 
         if (payload?.Error is { } error)
         {
+            ThrowIfNotDasCapable(error);
             if (IsNotFound(error))
             {
                 return PagedResult<SolanaAsset>.Empty(page, pageSize);
@@ -203,6 +205,28 @@ public sealed class DasSolanaAssetProvider : ISolanaAssetProvider
         }
 
         return asset.Interface is not null && SupportedInterfaces.Contains(asset.Interface);
+    }
+
+    /// <summary>
+    /// A "method not found / unsupported" error means the configured endpoint is a
+    /// plain RPC, not a DAS provider. Surface it clearly instead of letting the
+    /// substring "not found" be mistaken for "asset not found".
+    /// </summary>
+    private static void ThrowIfNotDasCapable(DasError error)
+    {
+        var message = error.Message ?? string.Empty;
+        var isMethodError = error.Code == -32601
+            || message.Contains("method not found", StringComparison.OrdinalIgnoreCase)
+            || message.Contains("not supported", StringComparison.OrdinalIgnoreCase)
+            || message.Contains("unsupported method", StringComparison.OrdinalIgnoreCase);
+
+        if (isMethodError)
+        {
+            throw new InvalidOperationException(
+                "The configured Solana endpoint does not support the DAS API. " +
+                "Set Solana:DasEndpoint to a DAS-capable provider (e.g. Helius/Triton), not a plain RPC like api.mainnet-beta.solana.com. " +
+                $"(provider said: {error.Message})");
+        }
     }
 
     private static bool IsNotFound(DasError error)

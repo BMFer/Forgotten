@@ -1,0 +1,27 @@
+[Unit]
+Description=FORGOTTEN Discord bot
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+User=forgotten
+Group=forgotten
+WorkingDirectory=/opt/forgotten/bot
+ExecStart=/opt/forgotten/bot/Forgotten.Bot
+EnvironmentFile=/etc/forgotten/forgotten.env
+Environment=DOTNET_ENVIRONMENT=Production
+Restart=on-failure
+RestartSec=5
+
+# Hardening
+NoNewPrivileges=true
+ProtectSystem=strict
+ProtectHome=true
+PrivateTmp=true
+ReadWritePaths=/var/lib/forgotten
+CapabilityBoundingSet=
+AmbientCapabilities=
+
+[Install]
+WantedBy=multi-user.target
