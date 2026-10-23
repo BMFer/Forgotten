@@ -18,8 +18,10 @@ internal static class IndexPage
     :root { color-scheme: dark; }
     body { margin:0; min-height:100vh; display:flex; align-items:center; justify-content:center;
            font-family:system-ui,Segoe UI,Roboto,sans-serif; background:#0b0d12; color:#e6e8ec; }
-    .card { width:min(92vw,520px); background:#141821; border:1px solid #232a37; border-radius:16px;
-            padding:32px; box-shadow:0 10px 40px rgba(0,0,0,.4); text-align:center; }
+    .card { width:min(94vw,560px); background:#141821; border:1px solid #232a37; border-radius:16px;
+            padding:24px; box-shadow:0 10px 40px rgba(0,0,0,.4); text-align:center; }
+    .banner { width:100%; height:auto; display:block; border-radius:12px; margin-bottom:18px;
+              border:1px solid #232a37; }
     h1 { font-size:26px; margin:0 0 6px; letter-spacing:.5px; }
     p { color:#9aa4b2; font-size:15px; line-height:1.6; margin:0 0 16px; }
     .steps { text-align:left; background:#0f1420; border:1px solid #232a37; border-radius:12px;
@@ -32,7 +34,7 @@ internal static class IndexPage
 </head>
 <body>
   <div class="card">
-    <h1>🎪 FORGOTTEN</h1>
+    <img src="/img/banner.jpg" alt="FORGOTTEN NFT" class="banner" />
     <p>Wallet verification for the FORGOTTEN Solana NFT community.</p>
     <div class="steps">
       To link your wallet:
