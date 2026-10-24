@@ -39,7 +39,7 @@ public sealed class CollectionRegistryService : ICollectionRegistryService
         };
 
         // The first approved collection for a guild becomes its default automatically, so
-        // members can flex "our collection" in /nft gallery with no extra admin step (spec §13).
+        // members can flex "our collection" in /nft showcase with no extra admin step (spec §13).
         if (existing is null)
         {
             var currentDefault = await _repository.GetDefaultAsync(guildId, Blockchain, cancellationToken).ConfigureAwait(false);
