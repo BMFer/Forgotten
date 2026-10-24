@@ -5,6 +5,10 @@ terraform {
       source  = "hashicorp/aws"
       version = "~> 5.60"
     }
+    random = {
+      source  = "hashicorp/random"
+      version = "~> 3.6"
+    }
   }
 }
 
@@ -84,6 +88,7 @@ resource "aws_instance" "forgotten" {
   subnet_id                   = data.aws_subnets.default.ids[0]
   vpc_security_group_ids      = [aws_security_group.forgotten.id]
   key_name                    = var.key_name
+  iam_instance_profile        = aws_iam_instance_profile.backup.name
   associate_public_ip_address = true
 
   root_block_device {

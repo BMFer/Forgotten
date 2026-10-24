@@ -7,6 +7,11 @@ output "instance_id" {
   value = aws_instance.forgotten.id
 }
 
+output "backup_bucket" {
+  description = "S3 bucket where database backups are uploaded."
+  value       = aws_s3_bucket.backups.bucket
+}
+
 output "next_steps" {
   value = <<-EOT
     1) At GoDaddy, add a DNS A record: ${var.domain} -> ${aws_eip.forgotten.public_ip}

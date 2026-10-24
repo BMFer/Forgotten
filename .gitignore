@@ -43,3 +43,6 @@ deploy/terraform/*.tfstate.*
 deploy/terraform/.terraform.lock.hcl
 artifacts/
 
+
+# Terraform plan files
+*.tfplan
