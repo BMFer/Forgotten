@@ -24,6 +24,8 @@ var app = builder.Build();
 // Serves the bundled client at /js/verify.js (built from ClientApp into wwwroot).
 app.UseStaticFiles();
 
+app.MapGet("/", () => Results.Content(IndexPage.Html, "text/html; charset=utf-8"));
+
 app.MapGet("/health", () => Results.Ok(new { status = "ok", component = "wallet-web" }));
 
 // The signing page. The token is a one-time capability embedded in the URL.

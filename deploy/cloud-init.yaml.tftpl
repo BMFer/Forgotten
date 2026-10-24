@@ -18,6 +18,9 @@ write_files:
   - path: /etc/caddy/Caddyfile
     permissions: "0644"
     content: |
+      {
+          email ${acme_email}
+      }
       ${domain} {
           encode gzip
           reverse_proxy 127.0.0.1:5080
@@ -45,8 +48,9 @@ runcmd:
   - curl -1sLf 'https://dl.cloudsmith.io/public/caddy/stable/gpg.key' | gpg --dearmor -o /usr/share/keyrings/caddy-stable-archive-keyring.gpg
   - curl -1sLf 'https://dl.cloudsmith.io/public/caddy/stable/debian.deb.txt' | tee /etc/apt/sources.list.d/caddy-stable.list
   - apt-get update
-  - apt-get install -y caddy
-  - sed -i 's/^email .*$/email ${acme_email}/' /etc/caddy/Caddyfile || true
-  - systemctl enable --now caddy
+  # A Caddyfile already exists (write_files above), so keep it on install without
+  # the interactive conffile prompt that would otherwise hang cloud-init.
+  - DEBIAN_FRONTEND=noninteractive apt-get install -y -o Dpkg::Options::=--force-confold caddy
   - systemctl enable --now fail2ban
+  - systemctl enable --now caddy
   - systemctl restart caddy
