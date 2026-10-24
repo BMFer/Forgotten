@@ -58,7 +58,7 @@ internal static class VerificationPage
     <div class="wallet" id="wallet"></div>
     <div class="status" id="status"></div>
   </div>
-  <script>window.__FORGOTTEN__ = __CONFIG__;</script>
+  <script type="application/json" id="forgotten-config">__CONFIG__</script>
   <script src="/js/verify.js"></script>
 </body>
 </html>

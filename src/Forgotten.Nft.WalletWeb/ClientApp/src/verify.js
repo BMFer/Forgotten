@@ -4,7 +4,16 @@
 // server-built challenge message; the server verifies it. Keys never leave the wallet.
 import { TipLinkWalletAdapter } from '@tiplink/wallet-adapter';
 
-const cfg = window.__FORGOTTEN__ || {};
+// Config is delivered as a non-executed JSON block (not an inline script) so the page
+// can enforce a strict Content-Security-Policy (script-src 'self', no 'unsafe-inline').
+const cfg = (() => {
+  try {
+    const node = document.getElementById('forgotten-config');
+    return node ? JSON.parse(node.textContent) : {};
+  } catch {
+    return {};
+  }
+})();
 const el = (id) => document.getElementById(id);
 const setStatus = (msg, cls) => {
   const s = el('status');
