@@ -286,7 +286,7 @@ public sealed class NftEmbedFactory
         var who = Truncate(Sanitize(flexerName) is { Length: > 0 } n ? n : "Someone", 80);
 
         var builder = new EmbedBuilder()
-            .WithAuthor($"🔥 {who} is flexing")
+            .WithAuthor($"🔥 @{who} is flexing")
             .WithTitle(Truncate(Sanitize(item.Name) is { Length: > 0 } name ? name : "Unknown NFT", 256))
             .WithColor(VerifiedColor)
             .WithCurrentTimestamp();
