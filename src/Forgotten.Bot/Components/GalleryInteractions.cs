@@ -129,16 +129,13 @@ public sealed class GalleryInteractions : InteractionModuleBase<SocketInteractio
             return;
         }
 
-        var flexer = (Context.User as SocketGuildUser)?.DisplayName
-            ?? Context.User.GlobalName
-            ?? Context.User.Username;
         var avatarUrl = (Context.User as SocketGuildUser)?.GetDisplayAvatarUrl(size: 128)
             ?? Context.User.GetDisplayAvatarUrl(size: 128)
             ?? Context.User.GetDefaultAvatarUrl();
 
         try
         {
-            var embed = _embeds.BuildFlexEmbed(view, flexer, avatarUrl);
+            var embed = _embeds.BuildFlexEmbed(view, Context.User.Id, avatarUrl);
             await FollowupAsync(embed: embed, ephemeral: false, allowedMentions: AllowedMentions.None).ConfigureAwait(false);
         }
         catch (Exception ex)
