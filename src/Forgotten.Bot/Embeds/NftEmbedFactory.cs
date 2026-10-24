@@ -276,17 +276,18 @@ public sealed class NftEmbedFactory
     }
 
     /// <summary>
-    /// A public "flex" embed: the member is showing off the NFT to the channel. Like the gallery
-    /// embed but attributed to the flexer and showing all traits. Flexer name and traits are
-    /// sanitized/capped like any user text.
+    /// A public "flex" embed: the member is showing off the NFT to the channel. Attributed to the
+    /// flexer via a clickable @mention (links to their profile), with their avatar as the thumbnail
+    /// and all traits listed. Traits are sanitized/capped like any user text.
     /// </summary>
-    public Embed BuildFlexEmbed(GalleryView view, string flexerName, string? flexerAvatarUrl)
+    public Embed BuildFlexEmbed(GalleryView view, ulong flexerId, string? flexerAvatarUrl)
     {
         var item = view.Item!;
-        var who = Truncate(Sanitize(flexerName) is { Length: > 0 } n ? n : "Someone", 80);
 
+        // Real mention in the description so it renders as a clickable @username linked to the
+        // flexer's profile. (Mentions don't render in author/title, and embed mentions never ping.)
         var builder = new EmbedBuilder()
-            .WithAuthor($"🔥 @{who} is flexing")
+            .WithDescription($"🔥 <@{flexerId}> is flexing")
             .WithTitle(Truncate(Sanitize(item.Name) is { Length: > 0 } name ? name : "Unknown NFT", 256))
             .WithColor(VerifiedColor)
             .WithCurrentTimestamp();
