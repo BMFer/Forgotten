@@ -30,6 +30,7 @@ internal static class VerificationPage
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <meta name="robots" content="noindex" />
+  <link rel="icon" type="image/x-icon" href="/favicon.ico" />
   <title>FORGOTTEN — Wallet Verification</title>
   <style>
     :root { color-scheme: dark; }
