@@ -85,7 +85,7 @@ public sealed class NftEmbedFactory
 
         if (r.Attributes.Count > 0)
         {
-            builder.AddField("Attributes", FormatAttributes(r), inline: false);
+            builder.AddField("Attributes", FormatAttributes(r.Attributes), inline: false);
         }
 
         var links = BuildLinks(r);
@@ -105,7 +105,7 @@ public sealed class NftEmbedFactory
             .WithCurrentTimestamp();
 
         builder.WithDescription(r.Attributes.Count > 0
-            ? Truncate(FormatAttributes(r), 4096)
+            ? Truncate(FormatAttributes(r.Attributes), 4096)
             : "This NFT has no attributes.");
 
         return builder.Build();
@@ -277,7 +277,8 @@ public sealed class NftEmbedFactory
 
     /// <summary>
     /// A public "flex" embed: the member is showing off the NFT to the channel. Like the gallery
-    /// embed but attributed to the flexer. The flexer name is sanitized/capped like any user text.
+    /// embed but attributed to the flexer and showing all traits. Flexer name and traits are
+    /// sanitized/capped like any user text.
     /// </summary>
     public Embed BuildFlexEmbed(GalleryView view, string flexerName)
     {
@@ -308,6 +309,11 @@ public sealed class NftEmbedFactory
         if (!string.IsNullOrWhiteSpace(item.Symbol))
         {
             builder.AddField("Symbol", Truncate(Sanitize(item.Symbol)!, 64), inline: true);
+        }
+
+        if (item.Attributes.Count > 0)
+        {
+            builder.AddField("Traits", FormatAttributes(item.Attributes), inline: false);
         }
 
         builder.AddField("Links", $"[View on Explorer]({ExplorerAddressUrl(item.AssetAddress)})", inline: false);
@@ -348,22 +354,22 @@ public sealed class NftEmbedFactory
             .WithFooter(r.ErrorCode ?? "ERROR")
             .Build();
 
-    private string FormatAttributes(NftInspectionResult r)
+    private string FormatAttributes(IReadOnlyList<NftAttributeData> attributes)
     {
         var sb = new StringBuilder();
         var shown = 0;
-        foreach (var attr in r.Attributes)
+        foreach (var attr in attributes)
         {
             if (shown >= 16)
             {
-                sb.Append($"…and {r.Attributes.Count - shown} more");
+                sb.Append($"…and {attributes.Count - shown} more");
                 break;
             }
 
             var line = $"**{Truncate(Sanitize(attr.TraitType)!, 64)}:** {Truncate(Sanitize(attr.TraitValue)!, 96)}\n";
             if (sb.Length + line.Length > 1000)
             {
-                sb.Append($"…and {r.Attributes.Count - shown} more");
+                sb.Append($"…and {attributes.Count - shown} more");
                 break;
             }
 
