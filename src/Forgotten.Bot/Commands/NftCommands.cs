@@ -1,6 +1,8 @@
 using Discord;
 using Discord.Interactions;
+using Discord.WebSocket;
 using Forgotten.Bot.Components;
+using Forgotten.Bot.Configuration;
 using Forgotten.Bot.Embeds;
 using Forgotten.Bot.Services;
 using Forgotten.Nft.Application.Abstractions;
@@ -27,6 +29,7 @@ public sealed class NftCommands : InteractionModuleBase<SocketInteractionContext
     private readonly NftEmbedFactory _embeds;
     private readonly CommandRateLimiter _rateLimiter;
     private readonly SolanaOptions _solanaOptions;
+    private readonly DiscordOptions _discordOptions;
     private readonly ILogger<NftCommands> _logger;
 
     public NftCommands(
@@ -38,6 +41,7 @@ public sealed class NftCommands : InteractionModuleBase<SocketInteractionContext
         NftEmbedFactory embeds,
         CommandRateLimiter rateLimiter,
         IOptions<SolanaOptions> solanaOptions,
+        IOptions<DiscordOptions> discordOptions,
         ILogger<NftCommands> logger)
     {
         _inspection = inspection;
@@ -48,12 +52,25 @@ public sealed class NftCommands : InteractionModuleBase<SocketInteractionContext
         _embeds = embeds;
         _rateLimiter = rateLimiter;
         _solanaOptions = solanaOptions.Value;
+        _discordOptions = discordOptions.Value;
         _logger = logger;
     }
 
     [SlashCommand("gallery", "Flex your NFTs — defaults to this server's collection.")]
     public async Task GalleryAsync([Summary("collection", "Optional — defaults to this server's collection; use the dropdown to switch")] string? collection = null)
     {
+        // Holders-only perk: when a flex role is configured, only members holding it may flex (spec §12).
+        if (_discordOptions.FlexRoleId is { } flexRoleId && Context.Guild is not null)
+        {
+            if (Context.User is not SocketGuildUser member || !member.Roles.Any(r => r.Id == flexRoleId))
+            {
+                await RespondAsync(
+                    $"🔒 Flexing is a holders-only perk — you need the <@&{flexRoleId}> role. Verify a wallet that holds the collection with `/wallet connect`.",
+                    ephemeral: true, allowedMentions: AllowedMentions.None).ConfigureAwait(false);
+                return;
+            }
+        }
+
         if (!_rateLimiter.TryAcquire(Context.User.Id, "gallery", out var retryAfter))
         {
             await RespondAsync($"⏳ Slow down — try again in {Math.Ceiling(retryAfter.TotalSeconds)}s.", ephemeral: true)

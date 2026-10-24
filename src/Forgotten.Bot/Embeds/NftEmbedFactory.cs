@@ -275,6 +275,45 @@ public sealed class NftEmbedFactory
         return builder.Build();
     }
 
+    /// <summary>
+    /// A public "flex" embed: the member is showing off the NFT to the channel. Like the gallery
+    /// embed but attributed to the flexer. The flexer name is sanitized/capped like any user text.
+    /// </summary>
+    public Embed BuildFlexEmbed(GalleryView view, string flexerName)
+    {
+        var item = view.Item!;
+        var who = Truncate(Sanitize(flexerName) is { Length: > 0 } n ? n : "Someone", 80);
+
+        var builder = new EmbedBuilder()
+            .WithAuthor($"🔥 {who} is flexing")
+            .WithTitle(Truncate(Sanitize(item.Name) is { Length: > 0 } name ? name : "Unknown NFT", 256))
+            .WithColor(VerifiedColor)
+            .WithCurrentTimestamp();
+
+        var image = DisplayableImageUrl(item.ImageUrl);
+        if (image is not null)
+        {
+            builder.WithImageUrl(image);
+        }
+        else if (!string.IsNullOrWhiteSpace(_presentation.PlaceholderImageUrl))
+        {
+            builder.WithImageUrl(_presentation.PlaceholderImageUrl);
+        }
+
+        if (item.CollectionAddress is not null)
+        {
+            builder.AddField("Collection", ShortenAddress(item.CollectionAddress), inline: true);
+        }
+
+        if (!string.IsNullOrWhiteSpace(item.Symbol))
+        {
+            builder.AddField("Symbol", Truncate(Sanitize(item.Symbol)!, 64), inline: true);
+        }
+
+        builder.AddField("Links", $"[View on Explorer]({ExplorerAddressUrl(item.AssetAddress)})", inline: false);
+        return builder.Build();
+    }
+
     private string BuildGalleryFooter(GalleryView view)
     {
         var footer = $"NFT {view.PageNumber} of {view.TotalCount}";

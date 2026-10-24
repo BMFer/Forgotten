@@ -1,5 +1,6 @@
 using Discord;
 using Discord.Interactions;
+using Discord.WebSocket;
 using Forgotten.Bot.Embeds;
 using Forgotten.Nft.Application.Abstractions;
 using Forgotten.Nft.Application.DTOs;
@@ -57,6 +58,12 @@ public sealed class GalleryInteractions : InteractionModuleBase<SocketInteractio
             return;
         }
 
+        if (action == "flex")
+        {
+            await FlexCurrentAsync(view).ConfigureAwait(false);
+            return;
+        }
+
         await RenderAsync(view).ConfigureAwait(false);
     }
 
@@ -108,6 +115,35 @@ public sealed class GalleryInteractions : InteractionModuleBase<SocketInteractio
             m.Components = GalleryComponents.Build(view);
             m.AllowedMentions = AllowedMentions.None;
         });
+
+    /// <summary>
+    /// Posts the current NFT to the channel as a PUBLIC (non-ephemeral) message so other members
+    /// can see the flex. Who sees it is governed by the channel's permissions; who can flex is
+    /// gated on the gallery command (holders-only role).
+    /// </summary>
+    private async Task FlexCurrentAsync(GalleryView view)
+    {
+        if (view.Status != GalleryViewStatus.Ok || view.Item is null)
+        {
+            await FollowupAsync("Nothing to flex yet — open a collection first.", ephemeral: true).ConfigureAwait(false);
+            return;
+        }
+
+        var flexer = (Context.User as SocketGuildUser)?.DisplayName
+            ?? Context.User.GlobalName
+            ?? Context.User.Username;
+
+        try
+        {
+            var embed = _embeds.BuildFlexEmbed(view, flexer);
+            await FollowupAsync(embed: embed, ephemeral: false, allowedMentions: AllowedMentions.None).ConfigureAwait(false);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogWarning(ex, "Public flex failed for {Address}.", view.Item.AssetAddress);
+            await FollowupAsync("Couldn't post that flex right now.", ephemeral: true).ConfigureAwait(false);
+        }
+    }
 
     private async Task InspectCurrentAsync(GalleryView view)
     {

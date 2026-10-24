@@ -112,7 +112,7 @@ Member commands:
 |---|---|
 | `/nft inspect <address>` | Inspect an NFT: artwork, owner, traits, status |
 | `/nft verify <address>` | Layered verification — validity · on-chain collection · registry approval |
-| `/nft gallery [collection]` | Flex your NFTs — defaults to this server's collection; switch with the dropdown (or "All my NFTs"). Paginated, interactive |
+| `/nft gallery [collection]` | Flex your NFTs — defaults to this server's collection; switch with the dropdown (or "All my NFTs"). Paginated, interactive, with a **📢 Flex** button to post an NFT publicly. Optionally gated to a holders-only role (`Discord:FlexRoleId`) |
 | `/nft collection <address>` | Show a collection and a page of its NFTs |
 | `/nft attributes <address>` | Show just the NFT's traits |
 | `/nft refresh <address>` | Re-fetch an NFT, bypassing the cache |
