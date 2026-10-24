@@ -59,6 +59,7 @@ internal static class VerificationPage
       <button id="open-phantom">📱 Open in Phantom</button>
       <button id="open-solflare" class="secondary">📱 Open in Solflare</button>
     </div>
+    <button id="sign" class="hidden">✍️ Sign to verify</button>
     __TIPLINK_BUTTON__
     <div class="wallet" id="wallet"></div>
     <div class="status" id="status"></div>
