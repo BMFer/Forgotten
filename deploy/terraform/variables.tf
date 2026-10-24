@@ -29,3 +29,9 @@ variable "acme_email" {
   description = "Email for Let's Encrypt certificate notices."
   type        = string
 }
+
+variable "backup_retention_days" {
+  description = "Days to keep database backups in S3 before they expire."
+  type        = number
+  default     = 30
+}
