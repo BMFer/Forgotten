@@ -1,10 +1,12 @@
 using Discord;
 using Discord.Interactions;
 using Discord.WebSocket;
+using Forgotten.Bot.Configuration;
 using Forgotten.Bot.Embeds;
 using Forgotten.Nft.Application.Abstractions;
 using Forgotten.Nft.Application.DTOs;
 using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Options;
 
 namespace Forgotten.Bot.Components;
 
@@ -19,17 +21,20 @@ public sealed class GalleryInteractions : InteractionModuleBase<SocketInteractio
     private readonly INftGalleryService _gallery;
     private readonly INftInspectionService _inspection;
     private readonly NftEmbedFactory _embeds;
+    private readonly DiscordOptions _discordOptions;
     private readonly ILogger<GalleryInteractions> _logger;
 
     public GalleryInteractions(
         INftGalleryService gallery,
         INftInspectionService inspection,
         NftEmbedFactory embeds,
+        IOptions<DiscordOptions> discordOptions,
         ILogger<GalleryInteractions> logger)
     {
         _gallery = gallery;
         _inspection = inspection;
         _embeds = embeds;
+        _discordOptions = discordOptions.Value;
         _logger = logger;
     }
 
@@ -133,9 +138,14 @@ public sealed class GalleryInteractions : InteractionModuleBase<SocketInteractio
             ?? Context.User.GetDisplayAvatarUrl(size: 128)
             ?? Context.User.GetDefaultAvatarUrl();
 
+        // Verified holder = holds the configured holders role (granted/synced to on-chain owners).
+        var verifiedHolder = _discordOptions.FlexRoleId is { } holderRoleId
+            && Context.User is SocketGuildUser member
+            && member.Roles.Any(r => r.Id == holderRoleId);
+
         try
         {
-            var embed = _embeds.BuildFlexEmbed(view, Context.User.Id, avatarUrl);
+            var embed = _embeds.BuildFlexEmbed(view, Context.User.Id, avatarUrl, verifiedHolder);
             await FollowupAsync(embed: embed, ephemeral: false, allowedMentions: AllowedMentions.None).ConfigureAwait(false);
         }
         catch (Exception ex)

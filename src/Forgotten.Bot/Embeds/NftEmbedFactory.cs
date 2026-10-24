@@ -280,14 +280,18 @@ public sealed class NftEmbedFactory
     /// flexer via a clickable @mention (links to their profile), with their avatar as the thumbnail
     /// and all traits listed. Traits are sanitized/capped like any user text.
     /// </summary>
-    public Embed BuildFlexEmbed(GalleryView view, ulong flexerId, string? flexerAvatarUrl)
+    public Embed BuildFlexEmbed(GalleryView view, ulong flexerId, string? flexerAvatarUrl, bool verifiedHolder)
     {
         var item = view.Item!;
 
         // Real mention in the description so it renders as a clickable @username linked to the
         // flexer's profile. (Mentions don't render in author/title, and embed mentions never ping.)
+        var description = verifiedHolder
+            ? $"🔥 <@{flexerId}> is flexing\n✅ **Verified holder**"
+            : $"🔥 <@{flexerId}> is flexing";
+
         var builder = new EmbedBuilder()
-            .WithDescription($"🔥 <@{flexerId}> is flexing")
+            .WithDescription(description)
             .WithTitle(Truncate(Sanitize(item.Name) is { Length: > 0 } name ? name : "Unknown NFT", 256))
             .WithColor(VerifiedColor)
             .WithCurrentTimestamp();
