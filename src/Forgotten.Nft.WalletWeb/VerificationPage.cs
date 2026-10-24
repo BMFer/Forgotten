@@ -47,6 +47,7 @@ internal static class VerificationPage
     .wallet { font-family:ui-monospace,monospace; font-size:13px; color:#9aa4b2; margin:14px 0; word-break:break-all; }
     .status { margin-top:16px; padding:12px; border-radius:10px; font-size:14px; background:#0f1420; border:1px solid #232a37; min-height:20px; }
     .ok { color:#3fb950; } .err { color:#f85149; }
+    .hidden { display:none; }
   </style>
 </head>
 <body>
@@ -54,6 +55,10 @@ internal static class VerificationPage
     <h1>🎪 FORGOTTEN Wallet Verification</h1>
     <p class="sub">Connect a Solana wallet and sign the verification message to prove you control it — no transaction, no funds moved, no keys shared.</p>
     <button id="injected">Connect browser wallet (Phantom / Solflare)</button>
+    <div id="mobile-wallets" class="hidden">
+      <button id="open-phantom">📱 Open in Phantom</button>
+      <button id="open-solflare" class="secondary">📱 Open in Solflare</button>
+    </div>
     __TIPLINK_BUTTON__
     <div class="wallet" id="wallet"></div>
     <div class="status" id="status"></div>
