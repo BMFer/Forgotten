@@ -31,6 +31,10 @@ public class NftGalleryServiceTests
 
     private static (NftGalleryService svc, FakeGallerySessions sessions) Build(
         IReadOnlyList<SolanaAsset> owned, bool hasWallet = true, int galleryMax = 100)
+        => BuildWith(owned, new CollectionRegistryService(new FakeCollectionRepository(), new NullDomainEventPublisher()), hasWallet, galleryMax);
+
+    private static (NftGalleryService svc, FakeGallerySessions sessions) BuildWith(
+        IReadOnlyList<SolanaAsset> owned, ICollectionRegistryService registry, bool hasWallet = true, int galleryMax = 100)
     {
         var provider = new FakeOwnerProvider(owned);
         var connections = new FakeWalletConnections(hasWallet
@@ -39,7 +43,7 @@ public class NftGalleryServiceTests
         var sessions = new FakeGallerySessions();
 
         var svc = new NftGalleryService(
-            provider, connections, sessions,
+            provider, connections, sessions, registry,
             new MemoryCache(new MemoryCacheOptions()),
             Options.Create(new NftEngineOptions { GalleryMaxItems = galleryMax, GallerySessionMinutes = 15 }),
             Options.Create(new SolanaOptions { MaxPageSize = 100 }),
@@ -103,6 +107,47 @@ public class NftGalleryServiceTests
 
         Assert.Equal(GalleryViewStatus.Ok, view.Status);
         Assert.Equal(1, view.TotalCount);
+    }
+
+    [Fact]
+    public async Task NoFilter_InGuild_DefaultsToServerCollection()
+    {
+        const string serverCollection = "So11111111111111111111111111111111111111112";
+        var owned = new[]
+        {
+            Nft("Asset1111111111111111111111111111111111111A", collection: serverCollection),
+            Nft("Asset2111111111111111111111111111111111111B", collection: null),
+        };
+        var registry = new CollectionRegistryService(new FakeCollectionRepository(), new NullDomainEventPublisher());
+        await registry.ApproveAsync(Guild, serverCollection, "FORGOTTEN", 7UL, default);
+        var (svc, _) = BuildWith(owned, registry);
+
+        var view = await svc.CreateAsync(Owner, Guild, null, default);
+
+        Assert.Equal(GalleryViewStatus.Ok, view.Status);
+        Assert.Equal(1, view.TotalCount); // only the server-collection NFT, not the whole wallet
+        Assert.Equal(serverCollection, view.CollectionFilter);
+        Assert.Contains(view.AvailableCollections, c => c.Address == serverCollection && c.IsDefault);
+    }
+
+    [Fact]
+    public async Task SelectCollectionFilter_All_ShowsWholeWallet()
+    {
+        const string serverCollection = "So11111111111111111111111111111111111111112";
+        var owned = new[]
+        {
+            Nft("Asset1111111111111111111111111111111111111A", collection: serverCollection),
+            Nft("Asset2111111111111111111111111111111111111B", collection: null),
+        };
+        var registry = new CollectionRegistryService(new FakeCollectionRepository(), new NullDomainEventPublisher());
+        await registry.ApproveAsync(Guild, serverCollection, "FORGOTTEN", 7UL, default);
+        var (svc, _) = BuildWith(owned, registry);
+
+        var created = await svc.CreateAsync(Owner, Guild, null, default);
+        var all = await svc.SetCollectionFilterAsync(created.SessionId, Owner, null, default);
+
+        Assert.Equal(2, all.TotalCount); // filter cleared -> entire wallet
+        Assert.Null(all.CollectionFilter);
     }
 
     [Fact]

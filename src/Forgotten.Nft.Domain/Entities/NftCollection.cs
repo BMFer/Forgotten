@@ -23,6 +23,13 @@ public class NftCollection
 
     public bool IsApproved { get; set; }
 
+    /// <summary>
+    /// The guild's default collection — what <c>/nft gallery</c> shows first so members
+    /// flex this server's collection without passing an address. At most one per guild;
+    /// the first approved collection becomes the default automatically (spec §13).
+    /// </summary>
+    public bool IsDefault { get; set; }
+
     public ulong? ApprovedByDiscordUserId { get; set; }
 
     public DateTime? ApprovedAt { get; set; }

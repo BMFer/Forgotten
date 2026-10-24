@@ -44,21 +44,11 @@ public sealed class GalleryInteractions : InteractionModuleBase<SocketInteractio
         }
 
         var userId = Context.User.Id;
-        var view = action switch
-        {
-            "coll" => await _gallery.ToggleCollectionFilterAsync(sessionId, userId, page, CancellationToken.None).ConfigureAwait(false),
-            _ => await _gallery.GetPageAsync(sessionId, userId, page, refresh: action == "refresh", CancellationToken.None).ConfigureAwait(false),
-        };
+        var view = await _gallery.GetPageAsync(sessionId, userId, page, refresh: action == "refresh", CancellationToken.None).ConfigureAwait(false);
 
-        switch (view.Status)
+        if (await HandleNonRenderStatusAsync(view).ConfigureAwait(false))
         {
-            case GalleryViewStatus.NotOwner:
-                await FollowupAsync("This isn't your gallery. Run `/nft gallery` to open your own.", ephemeral: true).ConfigureAwait(false);
-                return;
-
-            case GalleryViewStatus.Expired:
-                await FollowupAsync("This gallery has expired. Run `/nft gallery` again.", ephemeral: true).ConfigureAwait(false);
-                return;
+            return;
         }
 
         if (action == "inspect")
@@ -67,13 +57,57 @@ public sealed class GalleryInteractions : InteractionModuleBase<SocketInteractio
             return;
         }
 
-        await ModifyOriginalResponseAsync(m =>
+        await RenderAsync(view).ConfigureAwait(false);
+    }
+
+    [ComponentInteraction($"{GalleryComponents.SelectPrefix}:*", ignoreGroupNames: true)]
+    public async Task OnCollectionSelectAsync(string sessionIdRaw, string[] selectedValues)
+    {
+        await DeferAsync().ConfigureAwait(false);
+
+        if (!int.TryParse(sessionIdRaw, out var sessionId))
+        {
+            await FollowupAsync("That gallery control is no longer valid.", ephemeral: true).ConfigureAwait(false);
+            return;
+        }
+
+        var selected = selectedValues.FirstOrDefault();
+        var collection = string.Equals(selected, GalleryComponents.AllValue, StringComparison.Ordinal) ? null : selected;
+        var view = await _gallery.SetCollectionFilterAsync(sessionId, Context.User.Id, collection, CancellationToken.None).ConfigureAwait(false);
+
+        if (await HandleNonRenderStatusAsync(view).ConfigureAwait(false))
+        {
+            return;
+        }
+
+        await RenderAsync(view).ConfigureAwait(false);
+    }
+
+    /// <summary>Replies to NotOwner/Expired sessions. Returns true when the caller should stop.</summary>
+    private async Task<bool> HandleNonRenderStatusAsync(GalleryView view)
+    {
+        switch (view.Status)
+        {
+            case GalleryViewStatus.NotOwner:
+                await FollowupAsync("This isn't your gallery. Run `/nft gallery` to open your own.", ephemeral: true).ConfigureAwait(false);
+                return true;
+
+            case GalleryViewStatus.Expired:
+                await FollowupAsync("This gallery has expired. Run `/nft gallery` again.", ephemeral: true).ConfigureAwait(false);
+                return true;
+
+            default:
+                return false;
+        }
+    }
+
+    private Task RenderAsync(GalleryView view) =>
+        ModifyOriginalResponseAsync(m =>
         {
             m.Embed = _embeds.BuildGalleryEmbed(view);
             m.Components = GalleryComponents.Build(view);
             m.AllowedMentions = AllowedMentions.None;
-        }).ConfigureAwait(false);
-    }
+        });
 
     private async Task InspectCurrentAsync(GalleryView view)
     {

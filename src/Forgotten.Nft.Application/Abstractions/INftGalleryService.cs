@@ -20,6 +20,9 @@ public interface INftGalleryService
     /// </summary>
     Task<GalleryView> GetPageAsync(int sessionId, ulong requestingUserId, int page, bool refresh, CancellationToken cancellationToken);
 
-    /// <summary>Toggles the collection filter to the current page's collection (or clears it) and returns page 0.</summary>
-    Task<GalleryView> ToggleCollectionFilterAsync(int sessionId, ulong requestingUserId, int currentPage, CancellationToken cancellationToken);
+    /// <summary>
+    /// Sets the session's collection filter to a specific collection (or clears it to show the
+    /// whole wallet when <paramref name="collectionAddress"/> is null/blank) and returns page 0.
+    /// </summary>
+    Task<GalleryView> SetCollectionFilterAsync(int sessionId, ulong requestingUserId, string? collectionAddress, CancellationToken cancellationToken);
 }

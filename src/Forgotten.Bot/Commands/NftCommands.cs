@@ -51,8 +51,8 @@ public sealed class NftCommands : InteractionModuleBase<SocketInteractionContext
         _logger = logger;
     }
 
-    [SlashCommand("gallery", "Browse the NFTs held by your verified wallet(s).")]
-    public async Task GalleryAsync([Summary("collection", "Optional collection address to filter by")] string? collection = null)
+    [SlashCommand("gallery", "Flex your NFTs — defaults to this server's collection.")]
+    public async Task GalleryAsync([Summary("collection", "Optional — defaults to this server's collection; use the dropdown to switch")] string? collection = null)
     {
         if (!_rateLimiter.TryAcquire(Context.User.Id, "gallery", out var retryAfter))
         {
@@ -181,7 +181,7 @@ public sealed class NftCommands : InteractionModuleBase<SocketInteractionContext
             .WithDescription(
                 "`/nft inspect <address>` — inspect an NFT and show its artwork, owner, and traits.\n" +
                 "`/nft verify <address>` — validity, on-chain collection, and registry approval.\n" +
-                "`/nft gallery [collection]` — browse the NFTs in your verified wallet(s).\n" +
+                "`/nft gallery [collection]` — flex your NFTs; defaults to this server's collection, switch with the dropdown.\n" +
                 "`/nft collection <address>` — show a collection and a page of its NFTs.\n" +
                 "`/nft attributes <address>` — show just the NFT's traits.\n" +
                 "`/nft refresh <address>` — re-fetch an NFT, bypassing the cache.\n" +

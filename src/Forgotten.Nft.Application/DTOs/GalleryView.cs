@@ -41,6 +41,12 @@ public sealed record GalleryView
 
     public string? CollectionFilter { get; init; }
 
+    /// <summary>
+    /// The guild's approved collections, offered as a dropdown so members can switch which
+    /// collection they flex (plus an "all wallet NFTs" choice). Empty outside a guild.
+    /// </summary>
+    public IReadOnlyList<CollectionChoice> AvailableCollections { get; init; } = Array.Empty<CollectionChoice>();
+
     /// <summary>True when the owned set was capped (not every NFT was loaded) — disclose it in the UI.</summary>
     public bool Truncated { get; init; }
 
@@ -48,3 +54,6 @@ public sealed record GalleryView
 
     public static GalleryView Of(GalleryViewStatus status) => new() { Status = status };
 }
+
+/// <summary>A collection a member can pick in the gallery dropdown (spec §6.2, §13).</summary>
+public sealed record CollectionChoice(string Address, string Label, bool IsDefault);

@@ -112,7 +112,7 @@ Member commands:
 |---|---|
 | `/nft inspect <address>` | Inspect an NFT: artwork, owner, traits, status |
 | `/nft verify <address>` | Layered verification — validity · on-chain collection · registry approval |
-| `/nft gallery [collection]` | Browse your verified wallets' NFTs — paginated, interactive buttons |
+| `/nft gallery [collection]` | Flex your NFTs — defaults to this server's collection; switch with the dropdown (or "All my NFTs"). Paginated, interactive |
 | `/nft collection <address>` | Show a collection and a page of its NFTs |
 | `/nft attributes <address>` | Show just the NFT's traits |
 | `/nft refresh <address>` | Re-fetch an NFT, bypassing the cache |
@@ -133,9 +133,10 @@ Administrator commands (guild administrators only; responses are ephemeral):
 
 | Command | Description |
 |---|---|
-| `/nft-admin collection-add <address> [name]` | Approve a collection for this server |
+| `/nft-admin collection-add <address> [name]` | Approve a collection for this server (the first becomes the gallery default) |
+| `/nft-admin collection-default <address>` | Set which approved collection `/nft gallery` shows by default |
 | `/nft-admin collection-remove <address>` | Remove a collection's approval |
-| `/nft-admin collection-list` | List approved collections |
+| `/nft-admin collection-list` | List approved collections (⭐ marks the default) |
 | `/nft-admin role-map <collection> <role>` | Grant a role to holders of an approved collection |
 | `/nft-admin role-unmap <collection>` | Stop granting a role for a collection |
 | `/nft-admin role-list` | List collection→role mappings |

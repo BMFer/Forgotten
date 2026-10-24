@@ -18,7 +18,20 @@ public interface ICollectionRegistryService
 
     Task<IReadOnlyList<NftCollection>> ListAsync(ulong guildId, CancellationToken cancellationToken);
 
+    /// <summary>Approved collections for a guild (what members can flex in the gallery).</summary>
+    Task<IReadOnlyList<NftCollection>> ListApprovedAsync(ulong guildId, CancellationToken cancellationToken);
+
     Task<NftCollection?> GetAsync(ulong guildId, string collectionAddress, CancellationToken cancellationToken);
 
     Task<bool> IsApprovedAsync(ulong guildId, string collectionAddress, CancellationToken cancellationToken);
+
+    /// <summary>
+    /// The collection <c>/nft gallery</c> defaults to for a guild: the flagged default, or — as a
+    /// fallback for guilds approved before defaults existed — the sole approved collection. Null if
+    /// the guild has no (or ambiguously many) approved collections and none is flagged.
+    /// </summary>
+    Task<NftCollection?> GetDefaultAsync(ulong guildId, CancellationToken cancellationToken);
+
+    /// <summary>Sets the guild's default collection. Returns false if it is not an approved collection.</summary>
+    Task<bool> SetDefaultAsync(ulong guildId, string collectionAddress, CancellationToken cancellationToken);
 }

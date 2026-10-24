@@ -193,7 +193,13 @@ public sealed class NftEmbedFactory
         foreach (var c in collections.Take(20))
         {
             var name = Truncate(Sanitize(c.DisplayName) is { Length: > 0 } dn ? dn : "(unnamed)", 48);
-            sb.Append($"{(c.IsApproved ? "✅" : "⬜")} **{name}** — {ShortenAddress(c.CollectionAddress)}\n");
+            var star = c.IsDefault ? " ⭐" : string.Empty;
+            sb.Append($"{(c.IsApproved ? "✅" : "⬜")} **{name}**{star} — {ShortenAddress(c.CollectionAddress)}\n");
+        }
+
+        if (collections.Any(c => c.IsDefault))
+        {
+            sb.Append("\n⭐ = default collection shown in `/nft gallery`");
         }
 
         builder.WithDescription(Truncate(sb.ToString(), 4096));
@@ -229,7 +235,7 @@ public sealed class NftEmbedFactory
         if (view.Status == GalleryViewStatus.Empty)
         {
             var reason = view.CollectionFilter is { Length: > 0 }
-                ? "No NFTs in your verified wallets match that collection filter."
+                ? "You don't hold any NFTs from the selected collection yet. Use the dropdown to switch collections or pick **All my NFTs**."
                 : "No NFTs found in your verified wallets.";
             return new EmbedBuilder()
                 .WithTitle("FORGOTTEN NFT Gallery")

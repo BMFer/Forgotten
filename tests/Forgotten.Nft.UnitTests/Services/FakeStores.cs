@@ -92,6 +92,27 @@ internal sealed class FakeCollectionRepository : INftCollectionRepository
         return Task.FromResult(true);
     }
 
+    public Task<NftCollection?> GetDefaultAsync(ulong guildId, string blockchain, CancellationToken cancellationToken) =>
+        Task.FromResult(_items.FirstOrDefault(c =>
+            c.GuildId == guildId && c.Blockchain == blockchain && c.IsApproved && c.IsDefault));
+
+    public Task<bool> SetDefaultAsync(ulong guildId, string blockchain, string collectionAddress, CancellationToken cancellationToken)
+    {
+        var guildCollections = _items.Where(c => c.GuildId == guildId && c.Blockchain == blockchain).ToList();
+        var target = guildCollections.FirstOrDefault(c => c.CollectionAddress == collectionAddress);
+        if (target is null || !target.IsApproved)
+        {
+            return Task.FromResult(false);
+        }
+
+        foreach (var c in guildCollections)
+        {
+            c.IsDefault = ReferenceEquals(c, target);
+        }
+
+        return Task.FromResult(true);
+    }
+
     public Task<IReadOnlyList<string>> ListApprovedCollectionAddressesAsync(string blockchain, CancellationToken cancellationToken) =>
         Task.FromResult<IReadOnlyList<string>>(
             _items.Where(c => c.Blockchain == blockchain && c.IsApproved).Select(c => c.CollectionAddress).Distinct().ToList());

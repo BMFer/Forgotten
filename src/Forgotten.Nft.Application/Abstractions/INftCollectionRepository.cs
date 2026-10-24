@@ -13,6 +13,15 @@ public interface INftCollectionRepository
 
     Task<bool> RemoveAsync(ulong guildId, string blockchain, string collectionAddress, CancellationToken cancellationToken);
 
+    /// <summary>The guild's approved default collection, or null if none is flagged.</summary>
+    Task<NftCollection?> GetDefaultAsync(ulong guildId, string blockchain, CancellationToken cancellationToken);
+
+    /// <summary>
+    /// Makes <paramref name="collectionAddress"/> the guild's sole default (clearing any other),
+    /// provided it is an approved collection. Returns false if it is not approved/present.
+    /// </summary>
+    Task<bool> SetDefaultAsync(ulong guildId, string blockchain, string collectionAddress, CancellationToken cancellationToken);
+
     /// <summary>Distinct approved collection addresses across all guilds (for the ownership monitor).</summary>
     Task<IReadOnlyList<string>> ListApprovedCollectionAddressesAsync(string blockchain, CancellationToken cancellationToken);
 }
