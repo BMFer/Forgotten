@@ -75,7 +75,9 @@ async function connectInjected() {
     });
     if (!ok && btn) btn.disabled = false;
   } catch (e) {
-    setStatus('❌ ' + (e && e.message ? e.message : 'Something went wrong.'), 'err');
+    const base = (e && e.message) ? e.message : 'Something went wrong.';
+    const hint = isMobileUA() ? ' — on mobile, use “Open in Phantom/Solflare” below instead.' : '';
+    setStatus('❌ ' + base + hint, 'err');
     if (btn) btn.disabled = false;
   }
 }
@@ -103,16 +105,16 @@ async function connectTipLink() {
 // wallet can't sign — it throws "An internal error has occurred"). The reliable fix is
 // to reopen this page inside the wallet app's own in-app browser via a universal link,
 // where window.solana is injected and the normal connect/sign flow below just works.
-function setupMobile() {
-  const ua = navigator.userAgent || '';
-  const isMobile = /Android|iPhone|iPad|iPod/i.test(ua);
-  const inWalletBrowser = !!(
-    (window.solana && (window.solana.isPhantom || window.solana.isSolflare)) ||
-    (window.phantom && window.phantom.solana) ||
-    window.solflare
-  );
-  if (!isMobile || inWalletBrowser) return; // desktop, or already inside a wallet browser
+function isMobileUA() {
+  return /Android|iPhone|iPad|iPod/i.test(navigator.userAgent || '');
+}
 
+function setupMobile() {
+  if (!isMobileUA()) return; // desktop: extension flow is fine
+
+  // Always offer the wallet-app deep-links on mobile. We can't reliably detect a *real*
+  // wallet in-app browser because Brave's built-in wallet impersonates Phantom
+  // (window.solana.isPhantom = true) yet can't sign — so trust nothing, always show these.
   const target = window.location.href;
   const ref = window.location.origin;
   const links = {
@@ -122,10 +124,13 @@ function setupMobile() {
   for (const id of Object.keys(links)) {
     el(id)?.addEventListener('click', () => { window.location.href = links[id]; });
   }
-  // Hide the (non-working-in-a-plain-mobile-browser) injected button; show the app links.
-  el('injected')?.classList.add('hidden');
   el('mobile-wallets')?.classList.remove('hidden');
-  setStatus('On your phone, tap “Open in Phantom” or “Open in Solflare” to connect inside your wallet app.');
+
+  // Only hide the in-page button when there's no injected wallet at all (plain mobile browser).
+  const hasProvider = !!(window.solana || (window.phantom && window.phantom.solana) || window.solflare);
+  if (!hasProvider) el('injected')?.classList.add('hidden');
+
+  setStatus('On your phone, use “Open in Phantom” or “Open in Solflare” to connect inside your wallet app.');
 }
 
 document.addEventListener('DOMContentLoaded', () => {
