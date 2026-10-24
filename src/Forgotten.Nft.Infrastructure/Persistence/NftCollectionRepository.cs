@@ -56,6 +56,39 @@ public sealed class NftCollectionRepository : INftCollectionRepository
         return true;
     }
 
+    public Task<NftCollection?> GetDefaultAsync(ulong guildId, string blockchain, CancellationToken cancellationToken) =>
+        _dbContext.NftCollections.FirstOrDefaultAsync(
+            c => c.GuildId == guildId && c.Blockchain == blockchain && c.IsApproved && c.IsDefault,
+            cancellationToken);
+
+    public async Task<bool> SetDefaultAsync(ulong guildId, string blockchain, string collectionAddress, CancellationToken cancellationToken)
+    {
+        var guildCollections = await _dbContext.NftCollections
+            .Where(c => c.GuildId == guildId && c.Blockchain == blockchain)
+            .ToListAsync(cancellationToken)
+            .ConfigureAwait(false);
+
+        var target = guildCollections.FirstOrDefault(c => c.CollectionAddress == collectionAddress);
+        if (target is null || !target.IsApproved)
+        {
+            return false;
+        }
+
+        var now = DateTime.UtcNow;
+        foreach (var c in guildCollections)
+        {
+            var shouldBeDefault = ReferenceEquals(c, target);
+            if (c.IsDefault != shouldBeDefault)
+            {
+                c.IsDefault = shouldBeDefault;
+                c.UpdatedAt = now;
+            }
+        }
+
+        await _dbContext.SaveChangesAsync(cancellationToken).ConfigureAwait(false);
+        return true;
+    }
+
     public async Task<IReadOnlyList<string>> ListApprovedCollectionAddressesAsync(string blockchain, CancellationToken cancellationToken) =>
         await _dbContext.NftCollections
             .Where(c => c.Blockchain == blockchain && c.IsApproved)

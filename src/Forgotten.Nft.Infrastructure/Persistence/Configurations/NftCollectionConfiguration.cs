@@ -22,6 +22,7 @@ public sealed class NftCollectionConfiguration : IEntityTypeConfiguration<NftCol
         builder.Property(x => x.DisplayName).HasMaxLength(128);
         builder.Property(x => x.Description).HasMaxLength(2048);
         builder.Property(x => x.ApprovedByDiscordUserId).HasConversion<string>().HasMaxLength(20);
+        builder.Property(x => x.IsDefault).IsRequired();
 
         builder.HasIndex(x => new { x.GuildId, x.Blockchain, x.CollectionAddress }).IsUnique();
     }

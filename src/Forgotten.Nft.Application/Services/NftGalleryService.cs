@@ -24,6 +24,7 @@ public sealed class NftGalleryService : INftGalleryService
     private readonly ISolanaAssetProvider _provider;
     private readonly IDiscordWalletConnectionRepository _connections;
     private readonly INftGallerySessionRepository _sessions;
+    private readonly ICollectionRegistryService _registry;
     private readonly IMemoryCache _cache;
     private readonly NftEngineOptions _engineOptions;
     private readonly SolanaOptions _solanaOptions;
@@ -33,6 +34,7 @@ public sealed class NftGalleryService : INftGalleryService
         ISolanaAssetProvider provider,
         IDiscordWalletConnectionRepository connections,
         INftGallerySessionRepository sessions,
+        ICollectionRegistryService registry,
         IMemoryCache cache,
         IOptions<NftEngineOptions> engineOptions,
         IOptions<SolanaOptions> solanaOptions,
@@ -41,6 +43,7 @@ public sealed class NftGalleryService : INftGalleryService
         _provider = provider;
         _connections = connections;
         _sessions = sessions;
+        _registry = registry;
         _cache = cache;
         _engineOptions = engineOptions.Value;
         _solanaOptions = solanaOptions.Value;
@@ -55,12 +58,21 @@ public sealed class NftGalleryService : INftGalleryService
             return GalleryView.Of(GalleryViewStatus.NoWallet);
         }
 
+        // No explicit collection? Default to this server's collection so members flex "our"
+        // collection without passing an address (spec §6.2, §13).
+        var filter = string.IsNullOrWhiteSpace(collectionFilter) ? null : collectionFilter.Trim();
+        if (filter is null && guildId != 0)
+        {
+            var def = await _registry.GetDefaultAsync(guildId, cancellationToken).ConfigureAwait(false);
+            filter = def?.CollectionAddress;
+        }
+
         var session = new NftGallerySession
         {
             DiscordUserId = discordUserId,
             GuildId = guildId,
             WalletAddress = wallets[0].WalletAddress,
-            CollectionFilter = string.IsNullOrWhiteSpace(collectionFilter) ? null : collectionFilter.Trim(),
+            CollectionFilter = filter,
             CurrentPage = 0,
             CreatedAt = DateTime.UtcNow,
             ExpiresAt = DateTime.UtcNow.AddMinutes(Math.Max(1, _engineOptions.GallerySessionMinutes)),
@@ -76,7 +88,8 @@ public sealed class NftGalleryService : INftGalleryService
         return session.view ?? await BuildViewAsync(session.session!, page, refresh, cancellationToken).ConfigureAwait(false);
     }
 
-    public async Task<GalleryView> ToggleCollectionFilterAsync(int sessionId, ulong requestingUserId, int currentPage, CancellationToken cancellationToken)
+    public async Task<GalleryView> SetCollectionFilterAsync(
+        int sessionId, ulong requestingUserId, string? collectionAddress, CancellationToken cancellationToken)
     {
         var loaded = await LoadOwnedSessionAsync(sessionId, requestingUserId, cancellationToken).ConfigureAwait(false);
         if (loaded.view is not null)
@@ -85,17 +98,7 @@ public sealed class NftGalleryService : INftGalleryService
         }
 
         var session = loaded.session!;
-        if (session.CollectionFilter is null)
-        {
-            // Filter to the collection of the NFT currently shown.
-            var current = await BuildViewAsync(session, currentPage, refresh: false, cancellationToken).ConfigureAwait(false);
-            session.CollectionFilter = current.Item?.CollectionAddress;
-        }
-        else
-        {
-            session.CollectionFilter = null;
-        }
-
+        session.CollectionFilter = string.IsNullOrWhiteSpace(collectionAddress) ? null : collectionAddress.Trim();
         session.CurrentPage = 0;
         await _sessions.UpdateAsync(session, cancellationToken).ConfigureAwait(false);
         return await BuildViewAsync(session, 0, refresh: false, cancellationToken).ConfigureAwait(false);
@@ -121,6 +124,7 @@ public sealed class NftGalleryService : INftGalleryService
     private async Task<GalleryView> BuildViewAsync(NftGallerySession session, int page, bool refresh, CancellationToken cancellationToken)
     {
         var owned = await GetOwnedAsync(session.DiscordUserId, refresh, cancellationToken).ConfigureAwait(false);
+        var choices = await GetCollectionChoicesAsync(session.GuildId, cancellationToken).ConfigureAwait(false);
 
         var items = session.CollectionFilter is { Length: > 0 } filter
             ? owned.Items.Where(a => string.Equals(a.CollectionAddress, filter, StringComparison.Ordinal)).ToList()
@@ -134,6 +138,7 @@ public sealed class NftGalleryService : INftGalleryService
                 SessionId = session.Id,
                 OwnerUserId = session.DiscordUserId,
                 CollectionFilter = session.CollectionFilter,
+                AvailableCollections = choices,
                 Truncated = owned.Truncated,
             };
         }
@@ -148,9 +153,29 @@ public sealed class NftGalleryService : INftGalleryService
             PageIndex = index,
             TotalCount = items.Count,
             CollectionFilter = session.CollectionFilter,
+            AvailableCollections = choices,
             Truncated = owned.Truncated,
         };
     }
+
+    private async Task<IReadOnlyList<CollectionChoice>> GetCollectionChoicesAsync(ulong guildId, CancellationToken cancellationToken)
+    {
+        if (guildId == 0)
+        {
+            return Array.Empty<CollectionChoice>();
+        }
+
+        var approved = await _registry.ListApprovedAsync(guildId, cancellationToken).ConfigureAwait(false);
+        return approved
+            .Select(c => new CollectionChoice(
+                c.CollectionAddress,
+                string.IsNullOrWhiteSpace(c.DisplayName) ? Shorten(c.CollectionAddress) : c.DisplayName!,
+                c.IsDefault))
+            .ToList();
+    }
+
+    private static string Shorten(string address) =>
+        address.Length <= 10 ? address : $"{address[..4]}…{address[^4..]}";
 
     private async Task<OwnedSet> GetOwnedAsync(ulong discordUserId, bool refresh, CancellationToken cancellationToken)
     {

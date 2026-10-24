@@ -38,6 +38,14 @@ public sealed class CollectionRegistryService : ICollectionRegistryService
             CreatedAt = now,
         };
 
+        // The first approved collection for a guild becomes its default automatically, so
+        // members can flex "our collection" in /nft gallery with no extra admin step (spec §13).
+        if (existing is null)
+        {
+            var currentDefault = await _repository.GetDefaultAsync(guildId, Blockchain, cancellationToken).ConfigureAwait(false);
+            entity.IsDefault = currentDefault is null;
+        }
+
         entity.IsApproved = true;
         entity.ApprovedByDiscordUserId = approvedByUserId;
         entity.ApprovedAt = now;
@@ -60,6 +68,29 @@ public sealed class CollectionRegistryService : ICollectionRegistryService
 
     public Task<IReadOnlyList<NftCollection>> ListAsync(ulong guildId, CancellationToken cancellationToken) =>
         _repository.ListAsync(guildId, Blockchain, cancellationToken);
+
+    public async Task<IReadOnlyList<NftCollection>> ListApprovedAsync(ulong guildId, CancellationToken cancellationToken)
+    {
+        var all = await _repository.ListAsync(guildId, Blockchain, cancellationToken).ConfigureAwait(false);
+        return all.Where(c => c.IsApproved).ToList();
+    }
+
+    public async Task<NftCollection?> GetDefaultAsync(ulong guildId, CancellationToken cancellationToken)
+    {
+        var flagged = await _repository.GetDefaultAsync(guildId, Blockchain, cancellationToken).ConfigureAwait(false);
+        if (flagged is not null)
+        {
+            return flagged;
+        }
+
+        // Fallback: a guild with exactly one approved collection flexes that one by default,
+        // even if it predates the IsDefault flag.
+        var approved = await ListApprovedAsync(guildId, cancellationToken).ConfigureAwait(false);
+        return approved.Count == 1 ? approved[0] : null;
+    }
+
+    public Task<bool> SetDefaultAsync(ulong guildId, string collectionAddress, CancellationToken cancellationToken) =>
+        _repository.SetDefaultAsync(guildId, Blockchain, Normalize(collectionAddress), cancellationToken);
 
     public Task<NftCollection?> GetAsync(ulong guildId, string collectionAddress, CancellationToken cancellationToken) =>
         _repository.GetAsync(guildId, Blockchain, Normalize(collectionAddress), cancellationToken);

@@ -141,10 +141,32 @@ public sealed class NftAdminCommands : InteractionModuleBase<SocketInteractionCo
         await DeferAsync(ephemeral: true).ConfigureAwait(false);
         try
         {
-            await _registry.ApproveAsync(Context.Guild.Id, address, name, Context.User.Id, CancellationToken.None)
+            var entry = await _registry.ApproveAsync(Context.Guild.Id, address, name, Context.User.Id, CancellationToken.None)
                 .ConfigureAwait(false);
             var suffix = string.IsNullOrWhiteSpace(name) ? string.Empty : $" as **{name}**";
-            await FollowupAsync($"✅ Approved collection `{address}`{suffix}.", ephemeral: true).ConfigureAwait(false);
+            var defaultNote = entry.IsDefault
+                ? " It's now the **server default** members flex in `/nft gallery`."
+                : " Members can flex it from the `/nft gallery` dropdown. Use `/nft-admin collection-default` to make it the default.";
+            await FollowupAsync($"✅ Approved collection `{address}`{suffix}.{defaultNote}", ephemeral: true).ConfigureAwait(false);
+        }
+        catch (ArgumentException)
+        {
+            await FollowupAsync("That is not a valid Solana collection address.", ephemeral: true).ConfigureAwait(false);
+        }
+    }
+
+    [SlashCommand("collection-default", "Set which approved collection members flex by default in /nft gallery.")]
+    public async Task CollectionDefaultAsync([Summary("address", "The collection address")] string address)
+    {
+        await DeferAsync(ephemeral: true).ConfigureAwait(false);
+        try
+        {
+            var ok = await _registry.SetDefaultAsync(Context.Guild.Id, address, CancellationToken.None).ConfigureAwait(false);
+            await FollowupAsync(
+                ok
+                    ? $"⭐ `{address}` is now the server's default collection for `/nft gallery`."
+                    : "That collection isn't approved yet — add it first with `/nft-admin collection-add`.",
+                ephemeral: true).ConfigureAwait(false);
         }
         catch (ArgumentException)
         {
