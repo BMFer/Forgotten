@@ -38,6 +38,7 @@ public static class GalleryComponents
             .WithButton("Next ▶", Id(view.SessionId, "next", page + 1), ButtonStyle.Primary, disabled: isLast);
 
         builder
+            .WithButton("📢 Flex", Id(view.SessionId, "flex", page), ButtonStyle.Success, row: 1)
             .WithButton("Inspect", Id(view.SessionId, "inspect", page), ButtonStyle.Secondary, row: 1)
             .WithButton("Refresh", Id(view.SessionId, "refresh", page), ButtonStyle.Secondary, new Emoji("🔄"), row: 1);
 

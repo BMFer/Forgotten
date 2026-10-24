@@ -19,4 +19,10 @@ public sealed class DiscordOptions
     /// development. When unset, commands register globally (slower propagation).
     /// </summary>
     public ulong? DevGuildId { get; set; }
+
+    /// <summary>
+    /// Optional "holders" role. When set, only members who hold this role may open
+    /// <c>/nft gallery</c> and flex — making flexing a holders-only perk. Unset = open to all.
+    /// </summary>
+    public ulong? FlexRoleId { get; set; }
 }
