@@ -26,7 +26,11 @@ function toBase64(bytes) {
   return btoa(binary);
 }
 
-async function challengeAndSubmit(walletAddress, signMessage) {
+// Mobile wallets require the sign prompt to be launched from a fresh user tap, so after
+// connecting we pre-fetch the challenge and (on mobile) wait for a dedicated "Sign" tap.
+let pendingSign = null; // { walletAddress, sign }
+
+async function requestChallenge(walletAddress) {
   setStatus('Requesting challenge…');
   const chRes = await fetch(`/api/verify/${cfg.token}/challenge`, {
     method: 'POST', headers: { 'Content-Type': 'application/json' },
@@ -34,13 +38,15 @@ async function challengeAndSubmit(walletAddress, signMessage) {
   });
   if (!chRes.ok) {
     setStatus('This verification link is invalid or has expired. Run /wallet connect again.', 'err');
-    return false;
+    return null;
   }
   const { message } = await chRes.json();
+  return message;
+}
 
+async function submitSignature(walletAddress, sign) {
   setStatus('Please approve the signature request in your wallet…');
-  const signature = toBase64(await signMessage(new TextEncoder().encode(message)));
-
+  const signature = toBase64(await sign());
   setStatus('Verifying…');
   const vRes = await fetch(`/api/verify/${cfg.token}`, {
     method: 'POST', headers: { 'Content-Type': 'application/json' },
@@ -53,6 +59,28 @@ async function challengeAndSubmit(walletAddress, signMessage) {
   }
   setStatus('❌ ' + (vJson.message || vJson.error || 'Verification failed.'), 'err');
   return false;
+}
+
+// Reveal the dedicated Sign button so signMessage() runs inside its own tap (reliable on mobile).
+function armSignStep(walletAddress, sign) {
+  pendingSign = { walletAddress, sign };
+  const sb = el('sign');
+  if (sb) { sb.classList.remove('hidden'); sb.disabled = false; }
+  const short = walletAddress.slice(0, 4) + '…' + walletAddress.slice(-4);
+  setStatus('Connected as ' + short + '. Tap “Sign to verify” and approve in your wallet.');
+}
+
+async function onSignTap() {
+  if (!pendingSign) return;
+  const sb = el('sign');
+  if (sb) sb.disabled = true;
+  try {
+    const ok = await submitSignature(pendingSign.walletAddress, pendingSign.sign);
+    if (!ok && sb) sb.disabled = false;
+  } catch (e) {
+    setStatus('❌ ' + (e && e.message ? e.message : 'Signing failed. Tap “Sign to verify” again.'), 'err');
+    if (sb) sb.disabled = false;
+  }
 }
 
 async function connectInjected() {
@@ -69,11 +97,22 @@ async function connectInjected() {
     const resp = await provider.connect();
     const wallet = resp.publicKey.toString();
     if (el('wallet')) el('wallet').textContent = wallet;
-    const ok = await challengeAndSubmit(wallet, async (bytes) => {
-      const signed = await provider.signMessage(bytes, 'utf8');
+
+    const message = await requestChallenge(wallet);
+    if (!message) { if (btn) btn.disabled = false; return; }
+
+    const sign = async () => {
+      const signed = await provider.signMessage(new TextEncoder().encode(message), 'utf8');
       return signed.signature || signed;
-    });
-    if (!ok && btn) btn.disabled = false;
+    };
+
+    if (isMobileUA()) {
+      if (btn) btn.classList.add('hidden');
+      armSignStep(wallet, sign); // require a fresh tap so the approve prompt reliably appears
+    } else {
+      const ok = await submitSignature(wallet, sign);
+      if (!ok && btn) btn.disabled = false;
+    }
   } catch (e) {
     const base = (e && e.message) ? e.message : 'Something went wrong.';
     const hint = isMobileUA() ? ' — on mobile, use “Open in Phantom/Solflare” below instead.' : '';
@@ -92,7 +131,10 @@ async function connectTipLink() {
     await adapter.connect();
     const wallet = adapter.publicKey.toBase58();
     if (el('wallet')) el('wallet').textContent = wallet;
-    await challengeAndSubmit(wallet, async (bytes) => adapter.signMessage(bytes));
+    const message = await requestChallenge(wallet);
+    if (message) {
+      await submitSignature(wallet, async () => adapter.signMessage(new TextEncoder().encode(message)));
+    }
   } catch (e) {
     setStatus('❌ ' + (e && e.message ? e.message : 'TipLink connection failed.'), 'err');
     if (btn) btn.disabled = false;
@@ -135,6 +177,7 @@ function setupMobile() {
 
 document.addEventListener('DOMContentLoaded', () => {
   el('injected')?.addEventListener('click', connectInjected);
+  el('sign')?.addEventListener('click', onSignTap);
   el('tiplink')?.addEventListener('click', connectTipLink);
   setupMobile();
 });
