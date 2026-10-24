@@ -40,7 +40,7 @@ public sealed class GalleryInteractions : InteractionModuleBase<SocketInteractio
 
         if (!int.TryParse(sessionIdRaw, out var sessionId) || !int.TryParse(pageRaw, out var page))
         {
-            await FollowupAsync("That gallery control is no longer valid.", ephemeral: true).ConfigureAwait(false);
+            await FollowupAsync("That showcase control is no longer valid.", ephemeral: true).ConfigureAwait(false);
             return;
         }
 
@@ -74,7 +74,7 @@ public sealed class GalleryInteractions : InteractionModuleBase<SocketInteractio
 
         if (!int.TryParse(sessionIdRaw, out var sessionId))
         {
-            await FollowupAsync("That gallery control is no longer valid.", ephemeral: true).ConfigureAwait(false);
+            await FollowupAsync("That showcase control is no longer valid.", ephemeral: true).ConfigureAwait(false);
             return;
         }
 
@@ -96,11 +96,11 @@ public sealed class GalleryInteractions : InteractionModuleBase<SocketInteractio
         switch (view.Status)
         {
             case GalleryViewStatus.NotOwner:
-                await FollowupAsync("This isn't your gallery. Run `/nft gallery` to open your own.", ephemeral: true).ConfigureAwait(false);
+                await FollowupAsync("This isn't your showcase. Run `/nft showcase` to open your own.", ephemeral: true).ConfigureAwait(false);
                 return true;
 
             case GalleryViewStatus.Expired:
-                await FollowupAsync("This gallery has expired. Run `/nft gallery` again.", ephemeral: true).ConfigureAwait(false);
+                await FollowupAsync("This showcase has expired. Run `/nft showcase` again.", ephemeral: true).ConfigureAwait(false);
                 return true;
 
             default:

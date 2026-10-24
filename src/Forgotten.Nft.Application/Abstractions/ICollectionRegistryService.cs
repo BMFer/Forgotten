@@ -26,7 +26,7 @@ public interface ICollectionRegistryService
     Task<bool> IsApprovedAsync(ulong guildId, string collectionAddress, CancellationToken cancellationToken);
 
     /// <summary>
-    /// The collection <c>/nft gallery</c> defaults to for a guild: the flagged default, or — as a
+    /// The collection <c>/nft showcase</c> defaults to for a guild: the flagged default, or — as a
     /// fallback for guilds approved before defaults existed — the sole approved collection. Null if
     /// the guild has no (or ambiguously many) approved collections and none is flagged.
     /// </summary>

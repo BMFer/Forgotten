@@ -11,7 +11,7 @@ external games — without hardcoding any single NFT collection.
 
 > **Status:** Phases 0–5 complete and running. NFT inspection/verification, the
 > `/nft-admin` registry, **cryptographic wallet verification** (`/wallet`), an
-> **interactive NFT gallery** (`/nft gallery`), and **background ownership
+> **interactive NFT showcase** (`/nft showcase`), and **background ownership
 > monitoring with NFT-gated Discord roles** all work. Phase 6 (external game / POW
 > integration) is the last — see the [Roadmap](#roadmap).
 
@@ -112,7 +112,7 @@ Member commands:
 |---|---|
 | `/nft inspect <address>` | Inspect an NFT: artwork, owner, traits, status |
 | `/nft verify <address>` | Layered verification — validity · on-chain collection · registry approval |
-| `/nft gallery [collection]` | Flex your NFTs — defaults to this server's collection; switch with the dropdown (or "All my NFTs"). Paginated, interactive, with a **📢 Flex** button to post an NFT publicly. Optionally gated to a holders-only role (`Discord:FlexRoleId`) |
+| `/nft showcase [collection]` | Flex your NFTs — defaults to this server's collection; switch with the dropdown (or "All my NFTs"). Paginated, interactive, with a **📢 Flex** button to post an NFT publicly. Optionally gated to a holders-only role (`Discord:FlexRoleId`) |
 | `/nft collection <address>` | Show a collection and a page of its NFTs |
 | `/nft attributes <address>` | Show just the NFT's traits |
 | `/nft refresh <address>` | Re-fetch an NFT, bypassing the cache |
@@ -133,8 +133,8 @@ Administrator commands (guild administrators only; responses are ephemeral):
 
 | Command | Description |
 |---|---|
-| `/nft-admin collection-add <address> [name]` | Approve a collection for this server (the first becomes the gallery default) |
-| `/nft-admin collection-default <address>` | Set which approved collection `/nft gallery` shows by default |
+| `/nft-admin collection-add <address> [name]` | Approve a collection for this server (the first becomes the showcase default) |
+| `/nft-admin collection-default <address>` | Set which approved collection `/nft showcase` shows by default |
 | `/nft-admin collection-remove <address>` | Remove a collection's approval |
 | `/nft-admin collection-list` | List approved collections (⭐ marks the default) |
 | `/nft-admin role-map <collection> <role>` | Grant a role to holders of an approved collection |
@@ -228,7 +228,7 @@ Each phase is a self-contained, tested vertical slice. Full guides live in
 | **1 — Foundation** | `/nft inspect` against a DAS provider | ✅ Complete |
 | **2 — Verification** | `/nft verify` + collection approval registry | ✅ Complete |
 | **3 — Wallet** | Cryptographic Ed25519 wallet ownership proof | ✅ Complete |
-| **4 — Gallery** | Interactive, paginated `/nft gallery` | ✅ Complete |
+| **4 — Showcase** | Interactive, paginated `/nft showcase` | ✅ Complete |
 | **5 — Monitoring** | Background ownership tracking + role sync | ✅ Complete |
 | **6 — Game integration** | Ownership/eligibility interfaces for POW | ⬜ Next |
 

@@ -199,7 +199,7 @@ public sealed class NftEmbedFactory
 
         if (collections.Any(c => c.IsDefault))
         {
-            sb.Append("\n⭐ = default collection shown in `/nft gallery`");
+            sb.Append("\n⭐ = default collection shown in `/nft showcase`");
         }
 
         builder.WithDescription(Truncate(sb.ToString(), 4096));
@@ -238,7 +238,7 @@ public sealed class NftEmbedFactory
                 ? "You don't hold any NFTs from the selected collection yet. Use the dropdown to switch collections or pick **All my NFTs**."
                 : "No NFTs found in your verified wallets.";
             return new EmbedBuilder()
-                .WithTitle("FORGOTTEN NFT Gallery")
+                .WithTitle("FORGOTTEN NFT Showcase")
                 .WithColor(NeutralColor)
                 .WithDescription(reason)
                 .Build();

@@ -22,7 +22,7 @@ public sealed class DiscordOptions
 
     /// <summary>
     /// Optional "holders" role. When set, only members who hold this role may open
-    /// <c>/nft gallery</c> and flex — making flexing a holders-only perk. Unset = open to all.
+    /// <c>/nft showcase</c> and flex — making flexing a holders-only perk. Unset = open to all.
     /// </summary>
     public ulong? FlexRoleId { get; set; }
 }

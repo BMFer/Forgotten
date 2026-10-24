@@ -56,7 +56,7 @@ public sealed class NftCommands : InteractionModuleBase<SocketInteractionContext
         _logger = logger;
     }
 
-    [SlashCommand("gallery", "Flex your NFTs — defaults to this server's collection.")]
+    [SlashCommand("showcase", "Flex your NFTs — defaults to this server's collection.")]
     public async Task GalleryAsync([Summary("collection", "Optional — defaults to this server's collection; use the dropdown to switch")] string? collection = null)
     {
         // Holders-only perk: when a flex role is configured, only members holding it may flex (spec §12).
@@ -91,7 +91,7 @@ public sealed class NftCommands : InteractionModuleBase<SocketInteractionContext
         {
             _logger.LogWarning(ex, "Gallery load failed for {User}.", Context.User.Id);
             await ModifyOriginalResponseAsync(m =>
-                m.Content = "Couldn't load your gallery right now — the blockchain provider may be unavailable or not DAS-capable. Please try again shortly.")
+                m.Content = "Couldn't load your showcase right now — the blockchain provider may be unavailable or not DAS-capable. Please try again shortly.")
                 .ConfigureAwait(false);
             return;
         }
@@ -198,7 +198,7 @@ public sealed class NftCommands : InteractionModuleBase<SocketInteractionContext
             .WithDescription(
                 "`/nft inspect <address>` — inspect an NFT and show its artwork, owner, and traits.\n" +
                 "`/nft verify <address>` — validity, on-chain collection, and registry approval.\n" +
-                "`/nft gallery [collection]` — flex your NFTs; defaults to this server's collection, switch with the dropdown.\n" +
+                "`/nft showcase [collection]` — flex your NFTs; defaults to this server's collection, switch with the dropdown.\n" +
                 "`/nft collection <address>` — show a collection and a page of its NFTs.\n" +
                 "`/nft attributes <address>` — show just the NFT's traits.\n" +
                 "`/nft refresh <address>` — re-fetch an NFT, bypassing the cache.\n" +

@@ -145,8 +145,8 @@ public sealed class NftAdminCommands : InteractionModuleBase<SocketInteractionCo
                 .ConfigureAwait(false);
             var suffix = string.IsNullOrWhiteSpace(name) ? string.Empty : $" as **{name}**";
             var defaultNote = entry.IsDefault
-                ? " It's now the **server default** members flex in `/nft gallery`."
-                : " Members can flex it from the `/nft gallery` dropdown. Use `/nft-admin collection-default` to make it the default.";
+                ? " It's now the **server default** members flex in `/nft showcase`."
+                : " Members can flex it from the `/nft showcase` dropdown. Use `/nft-admin collection-default` to make it the default.";
             await FollowupAsync($"✅ Approved collection `{address}`{suffix}.{defaultNote}", ephemeral: true).ConfigureAwait(false);
         }
         catch (ArgumentException)
@@ -155,7 +155,7 @@ public sealed class NftAdminCommands : InteractionModuleBase<SocketInteractionCo
         }
     }
 
-    [SlashCommand("collection-default", "Set which approved collection members flex by default in /nft gallery.")]
+    [SlashCommand("collection-default", "Set which approved collection members flex by default in /nft showcase.")]
     public async Task CollectionDefaultAsync([Summary("address", "The collection address")] string address)
     {
         await DeferAsync(ephemeral: true).ConfigureAwait(false);
@@ -164,7 +164,7 @@ public sealed class NftAdminCommands : InteractionModuleBase<SocketInteractionCo
             var ok = await _registry.SetDefaultAsync(Context.Guild.Id, address, CancellationToken.None).ConfigureAwait(false);
             await FollowupAsync(
                 ok
-                    ? $"⭐ `{address}` is now the server's default collection for `/nft gallery`."
+                    ? $"⭐ `{address}` is now the server's default collection for `/nft showcase`."
                     : "That collection isn't approved yet — add it first with `/nft-admin collection-add`.",
                 ephemeral: true).ConfigureAwait(false);
         }
