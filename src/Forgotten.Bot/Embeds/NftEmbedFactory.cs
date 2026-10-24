@@ -280,7 +280,7 @@ public sealed class NftEmbedFactory
     /// embed but attributed to the flexer and showing all traits. Flexer name and traits are
     /// sanitized/capped like any user text.
     /// </summary>
-    public Embed BuildFlexEmbed(GalleryView view, string flexerName)
+    public Embed BuildFlexEmbed(GalleryView view, string flexerName, string? flexerAvatarUrl)
     {
         var item = view.Item!;
         var who = Truncate(Sanitize(flexerName) is { Length: > 0 } n ? n : "Someone", 80);
@@ -290,6 +290,12 @@ public sealed class NftEmbedFactory
             .WithTitle(Truncate(Sanitize(item.Name) is { Length: > 0 } name ? name : "Unknown NFT", 256))
             .WithColor(VerifiedColor)
             .WithCurrentTimestamp();
+
+        // Flexer's avatar in the top-right thumbnail slot.
+        if (!string.IsNullOrWhiteSpace(flexerAvatarUrl))
+        {
+            builder.WithThumbnailUrl(flexerAvatarUrl);
+        }
 
         var image = DisplayableImageUrl(item.ImageUrl);
         if (image is not null)
