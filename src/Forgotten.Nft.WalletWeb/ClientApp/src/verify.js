@@ -99,7 +99,37 @@ async function connectTipLink() {
   }
 }
 
+// On a phone, a normal mobile browser has no wallet extension (and Brave's built-in
+// wallet can't sign — it throws "An internal error has occurred"). The reliable fix is
+// to reopen this page inside the wallet app's own in-app browser via a universal link,
+// where window.solana is injected and the normal connect/sign flow below just works.
+function setupMobile() {
+  const ua = navigator.userAgent || '';
+  const isMobile = /Android|iPhone|iPad|iPod/i.test(ua);
+  const inWalletBrowser = !!(
+    (window.solana && (window.solana.isPhantom || window.solana.isSolflare)) ||
+    (window.phantom && window.phantom.solana) ||
+    window.solflare
+  );
+  if (!isMobile || inWalletBrowser) return; // desktop, or already inside a wallet browser
+
+  const target = window.location.href;
+  const ref = window.location.origin;
+  const links = {
+    'open-phantom': `https://phantom.com/ul/browse/${encodeURIComponent(target)}?ref=${encodeURIComponent(ref)}`,
+    'open-solflare': `https://solflare.com/ul/v1/browse/${encodeURIComponent(target)}?ref=${encodeURIComponent(ref)}`,
+  };
+  for (const id of Object.keys(links)) {
+    el(id)?.addEventListener('click', () => { window.location.href = links[id]; });
+  }
+  // Hide the (non-working-in-a-plain-mobile-browser) injected button; show the app links.
+  el('injected')?.classList.add('hidden');
+  el('mobile-wallets')?.classList.remove('hidden');
+  setStatus('On your phone, tap “Open in Phantom” or “Open in Solflare” to connect inside your wallet app.');
+}
+
 document.addEventListener('DOMContentLoaded', () => {
   el('injected')?.addEventListener('click', connectInjected);
   el('tiplink')?.addEventListener('click', connectTipLink);
+  setupMobile();
 });
