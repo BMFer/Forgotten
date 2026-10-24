@@ -1,3 +1,7 @@
+<p align="center">
+  <img src="src/Forgotten.Nft.WalletWeb/wwwroot/img/banner.jpg" alt="FORGOTTEN NFT Engine" width="100%" />
+</p>
+
 # FORGOTTEN NFT Engine
 
 A universal **Solana NFT verification and collection engine** for Discord, built
